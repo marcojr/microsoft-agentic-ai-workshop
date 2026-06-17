@@ -1,0 +1,62 @@
+[
+  {
+    "approvalId": "apr-f14e5f56",
+    "relatedRecordId": "ord-1001",
+    "relatedRecordType": "order",
+    "requestedBy": "agent",
+    "approvalType": "Compensation",
+    "status": "Pending",
+    "riskLevel": "High",
+    "reason": "Delayed shipment and requested refund compensation",
+    "createdOn": "2026-06-17T20:15:39.777370+00:00",
+    "approvedBy": null
+  },
+  {
+    "approvalId": "apr-ca4d3f3a",
+    "relatedRecordId": "ord-1001",
+    "relatedRecordType": "order",
+    "requestedBy": "orchestrator",
+    "approvalType": "Compensation",
+    "status": "Pending",
+    "riskLevel": "High",
+    "reason": "Delayed shipment with pending refund",
+    "createdOn": "2026-06-17T20:42:11.362592+00:00",
+    "approvedBy": null
+  },
+  {
+    "approvalId": "apr-91de021d",
+    "relatedRecordId": "ord-1001",
+    "relatedRecordType": "order",
+    "requestedBy": "orchestrator",
+    "approvalType": "Compensation",
+    "status": "Pending",
+    "riskLevel": "High",
+    "reason": "Delayed shipment with pending refund",
+    "createdOn": "2026-06-17T20:42:12.113220+00:00",
+    "approvedBy": null
+  },
+  {
+    "approvalId": "apr-65d5ad58",
+    "relatedRecordId": "ord-1001",
+    "relatedRecordType": "order",
+    "requestedBy": "orchestrator",
+    "approvalType": "Compensation",
+    "status": "Pending",
+    "riskLevel": "High",
+    "reason": "Delayed shipment with pending refund",
+    "createdOn": "2026-06-17T20:47:12.591442+00:00",
+    "approvedBy": null
+  },
+  {
+    "approvalId": "apr-9b5c69c4",
+    "relatedRecordId": "ord-1001",
+    "relatedRecordType": "order",
+    "requestedBy": "orchestrator",
+    "approvalType": "Compensation",
+    "status": "Pending",
+    "riskLevel": "High",
+    "reason": "Delayed shipment with pending refund",
+    "createdOn": "2026-06-17T20:48:35.696286+00:00",
+    "approvedBy": null
+  }
+]

@@ -1,0 +1,20 @@
+[
+  {
+    "accountId": "acc-001",
+    "name": "Contoso Ltd",
+    "accountNumber": "C-1001",
+    "industry": "Retail",
+    "region": "UK",
+    "relationshipManager": "Sarah Mitchell",
+    "riskLevel": "Medium"
+  },
+  {
+    "accountId": "acc-002",
+    "name": "Fabrikam Group",
+    "accountNumber": "F-2001",
+    "industry": "Manufacturing",
+    "region": "EU",
+    "relationshipManager": "James Carter",
+    "riskLevel": "Low"
+  }
+]

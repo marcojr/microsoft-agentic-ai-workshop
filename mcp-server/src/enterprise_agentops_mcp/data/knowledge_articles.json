@@ -1,0 +1,26 @@
+[
+  {
+    "articleId": "ka-001",
+    "title": "Customer Compensation Policy",
+    "category": "Customer Service",
+    "content": "Customer compensation requires approval when refund or credit exceeds the standard threshold. Compensation must be approved by a service manager before being communicated externally. Premium customers may receive up to 20% of invoice value without director sign-off.",
+    "effectiveDate": "2026-01-01",
+    "riskCategory": "Medium"
+  },
+  {
+    "articleId": "ka-002",
+    "title": "Delivery Delay Policy",
+    "category": "Logistics",
+    "content": "Customers must be notified within 24 hours of a confirmed delivery delay. High-risk delays affecting priority customers require escalation to the service owner. Compensation eligibility begins after 48 hours of confirmed delay.",
+    "effectiveDate": "2026-01-01",
+    "riskCategory": "High"
+  },
+  {
+    "articleId": "ka-003",
+    "title": "Refund Policy",
+    "category": "Finance",
+    "content": "Refunds below 50 pounds can be approved by team leads. Refunds above 50 pounds require service manager approval. All refunds must be logged with a reason code before processing.",
+    "effectiveDate": "2026-01-01",
+    "riskCategory": "Medium"
+  }
+]

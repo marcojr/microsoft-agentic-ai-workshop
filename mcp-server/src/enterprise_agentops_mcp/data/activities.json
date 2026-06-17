@@ -1,0 +1,22 @@
+[
+  {
+    "activityId": "act-001",
+    "regardingId": "case-1001",
+    "regardingType": "case",
+    "type": "email",
+    "subject": "Initial complaint received",
+    "description": "Customer reported recurring delivery failures.",
+    "createdOn": "2026-06-11T09:12:00Z",
+    "owner": "Support Team A"
+  },
+  {
+    "activityId": "act-002",
+    "regardingId": "case-1001",
+    "regardingType": "case",
+    "type": "task",
+    "subject": "Carrier investigation requested",
+    "description": "Internal investigation requested with carrier.",
+    "createdOn": "2026-06-12T14:30:00Z",
+    "owner": "Support Team A"
+  }
+]

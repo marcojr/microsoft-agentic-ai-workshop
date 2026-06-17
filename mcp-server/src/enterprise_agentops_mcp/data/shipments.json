@@ -1,0 +1,28 @@
+[
+  {
+    "shipmentId": "ship-9001",
+    "orderId": "ord-1001",
+    "carrier": "DemoCarrier",
+    "trackingNumber": "TRK-123456",
+    "status": "Delayed",
+    "estimatedDeliveryDate": "2026-06-18",
+    "deliveredDate": null,
+    "delayReason": "Carrier network disruption",
+    "originPostcode": "SW1A 1AA",
+    "destinationPostcode": "IP1 1AA",
+    "routeDistanceKm": 117
+  },
+  {
+    "shipmentId": "ship-9002",
+    "orderId": "ord-1002",
+    "carrier": "DemoCarrier",
+    "trackingNumber": "TRK-123400",
+    "status": "Delivered",
+    "estimatedDeliveryDate": "2026-05-23",
+    "deliveredDate": "2026-05-23T14:30:00Z",
+    "delayReason": null,
+    "originPostcode": "SW1A 1AA",
+    "destinationPostcode": "IP1 1AA",
+    "routeDistanceKm": 117
+  }
+]

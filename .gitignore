@@ -1,0 +1,46 @@
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+.python_packages/
+
+# Node
+node_modules/
+dist/
+
+# Azure Functions / local runtime
+local.settings.json
+bin/
+obj/
+__blobstorage__/
+__queuestorage__/
+__tablestorage__/
+__azurite_db*__.json
+AzuriteConfig
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+*.err.log
+debug.log
+
+# Misc
+*.user
+*.suo

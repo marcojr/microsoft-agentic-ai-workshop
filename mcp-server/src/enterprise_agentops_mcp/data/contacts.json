@@ -1,0 +1,24 @@
+[
+  {
+    "contactId": "con-001",
+    "accountId": "acc-001",
+    "fullName": "John Smith",
+    "email": "john.smith@contoso.com",
+    "role": "Operations Director",
+    "phone": "+44 20 0000 0001",
+    "preferredLanguage": "English",
+    "deliveryAddress": "12 Market Street, Ipswich",
+    "deliveryPostcode": "IP1 1AA"
+  },
+  {
+    "contactId": "con-002",
+    "accountId": "acc-002",
+    "fullName": "Emma Clarke",
+    "email": "emma.clarke@fabrikam.com",
+    "role": "Procurement Manager",
+    "phone": "+44 20 0000 0002",
+    "preferredLanguage": "English",
+    "deliveryAddress": "45 Bridge Road, Manchester",
+    "deliveryPostcode": "M1 2AB"
+  }
+]

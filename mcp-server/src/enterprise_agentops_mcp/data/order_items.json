@@ -1,0 +1,22 @@
+[
+  {
+    "orderItemId": "oi-001",
+    "orderId": "ord-1001",
+    "productId": "prod-001",
+    "sku": "SKU-100",
+    "productName": "Premium Coffee Machine",
+    "quantity": 1,
+    "unitPrice": 299.99,
+    "totalPrice": 299.99
+  },
+  {
+    "orderItemId": "oi-002",
+    "orderId": "ord-1001",
+    "productId": "prod-002",
+    "sku": "SKU-101",
+    "productName": "Coffee Capsules Pack (x50)",
+    "quantity": 1,
+    "unitPrice": 49.99,
+    "totalPrice": 49.99
+  }
+]

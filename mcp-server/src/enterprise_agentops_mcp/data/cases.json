@@ -1,0 +1,17 @@
+[
+  {
+    "caseId": "case-1001",
+    "accountId": "acc-001",
+    "contactId": "con-001",
+    "orderId": "ord-1001",
+    "title": "Delayed shipment complaint",
+    "description": "Customer reported repeated delivery delays affecting store operations.",
+    "status": "Open",
+    "priority": "High",
+    "createdOn": "2026-06-11T09:00:00Z",
+    "slaDeadline": "2026-06-18T17:00:00Z",
+    "slaRisk": "High",
+    "owner": "Support Team A",
+    "category": "Logistics"
+  }
+]

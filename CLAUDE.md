@@ -1,0 +1,175 @@
+# CLAUDE.md — Enterprise AgentOps Control Tower
+
+## Project Identity
+
+Enterprise reference architecture demonstrating end-to-end Microsoft Agentic AI.
+Positioning: **Microsoft Agentic AI Architect**
+
+Primary scenario: **Webshop Order Support Agent**
+Secondary scenario: **Customer Support Case Intelligence Agent**
+
+---
+
+## AI Providers Used in This Project
+
+| Provider | Role | Docs |
+|---|---|---|
+| Anthropic (Claude) | Agent reasoning, drafting, evaluation, governance | [docs/ai-anthropic.md](docs/ai-anthropic.md) |
+| OpenAI / Codex | Code generation, orchestration scripting, alternative LLM | [docs/ai-codex.md](docs/ai-codex.md) |
+
+Default model: `claude-sonnet-4-6` (Anthropic) or `gpt-4.1-mini` (OpenAI)
+
+---
+
+## Repository Structure
+
+```
+/
+├── CLAUDE.md                        ← you are here
+├── context.MD                       ← authoritative project spec
+├── docs/
+│   ├── 00-setup.md                  ← install everything (start here)
+│   ├── 01-project-setup.md          ← day 1: structure + contracts
+│   ├── 02-mcp-server.md             ← day 2: MCP Server MVP + first tools
+│   ├── 03-mcp-tools-extended.md     ← day 3: remaining MCP tools
+│   ├── 04-orchestrator-api.md       ← day 4: Azure Function Orchestrator API
+│   ├── 05-pulumi-infrastructure.md  ← day 5: Pulumi + Azure resources
+│   ├── 06-dataverse-setup.md        ← day 6: Dataverse tables + sample data
+│   ├── 07-dataverse-integration.md  ← day 7: replace mocks with Dataverse
+│   ├── 08-secure-rag.md             ← day 8: Azure AI Search + RAG
+│   ├── 09-agent-framework.md        ← day 9: Semantic Kernel + Copilot Studio
+│   ├── 10-observability-polish.md   ← day 10: cost, dashboard, demo
+│   ├── agents.md                    ← all agents: roles, prompts, wiring
+│   ├── ai-anthropic.md              ← Anthropic integration guide
+│   └── ai-codex.md                  ← OpenAI Codex integration guide
+├── mcp-server/                      ← Python MCP Server (start here)
+├── apps/
+│   ├── orchestrator-api/            ← Azure Functions backend
+│   ├── frontend-demo/               ← optional demo UI
+│   └── m365-agent/                  ← post-MVP: Microsoft 365 Agents SDK
+├── agents/                          ← Semantic Kernel agent definitions
+├── copilot-studio/                  ← Copilot Studio exports + screenshots
+├── foundry/                         ← Azure AI Foundry config
+├── power-platform/                  ← Power Automate flows + Dataverse schema
+├── infrastructure/pulumi/           ← Pulumi IaC (TypeScript)
+├── data/                            ← sample documents + seed scripts
+└── dashboards/                      ← Power BI reports + screenshots
+```
+
+---
+
+## Core Commands
+
+```bash
+# MCP Server
+cd mcp-server
+uv sync
+uv run fastmcp dev src/enterprise_agentops_mcp/server.py
+
+# Azure Functions
+cd apps/orchestrator-api
+func start
+
+# Pulumi
+cd infrastructure/pulumi
+pulumi up --stack dev
+
+# Tests
+cd mcp-server
+uv run pytest tests/ -v
+
+# Power Platform CLI
+pac auth create --url https://yourorg.crm.dynamics.com
+```
+
+---
+
+## Key Technologies
+
+| Layer | Technology |
+|---|---|
+| Business Agent | Copilot Studio (Test Chat for MVP) |
+| Managed Agent | Azure AI Foundry / Foundry Agent Service |
+| Pro-code Orchestration | Semantic Kernel / Microsoft Agent Framework |
+| Custom-Engine Agent (Post-MVP) | Microsoft 365 Agents SDK / Agents Playground |
+| Governed Tool Layer | MCP Server (Python, FastMCP) |
+| Public MCP Server | OpenStreetMap / Geocoding MCP Server |
+| Backend API | Azure Functions (Python) |
+| Business Data | Dataverse |
+| Knowledge Search | Azure AI Search (Secure RAG) |
+| Workflow Automation | Power Automate + Logic Apps + Service Bus |
+| Observability | Application Insights + Azure Monitor |
+| Cost Dashboard | Power BI |
+| Infrastructure | Pulumi (TypeScript) |
+
+---
+
+## Working Rules for Claude
+
+- The authoritative spec is `context.MD`. When in doubt, follow it.
+- Record every meaningful setup step, implementation step, decision, verification result and blocker in `progress.md` at the repository root.
+- Keep `progress.md` short, chronological and factual.
+- Always start with mock data (`MCP_DATA_MODE=mock`). Replace with real services only after the mock pattern works.
+- Never hardcode secrets. Use `.env` locally and Key Vault in Azure.
+- Every MCP tool must log its execution. No silent tool calls.
+- All agent runs must call `log_agent_run` and `calculate_agent_run_cost`.
+- Approval gates (`create_approval_request`) cannot be bypassed by agents.
+- Mock data lives in `mcp-server/src/enterprise_agentops_mcp/data/`.
+- Keep mock fallback mode even after Dataverse integration is complete.
+- Pulumi manages all Azure resources — do not create resources manually in the portal.
+- Dataverse runtime authentication standard is Service Principal. Use interactive `pac auth` only for maker/admin tasks.
+
+---
+
+## Environment Variables
+
+```env
+# AI Providers
+ANTHROPIC_API_KEY=
+OPENAI_API_KEY=
+
+# Azure OpenAI (via Foundry)
+AZURE_OPENAI_ENDPOINT=
+AZURE_OPENAI_API_KEY=
+
+# Azure AI Search
+AZURE_AI_SEARCH_ENDPOINT=
+AZURE_AI_SEARCH_KEY=
+AZURE_AI_SEARCH_INDEX=enterprise-knowledge
+
+# Dataverse
+DATAVERSE_URL=
+DATAVERSE_SP_CLIENT_ID=
+DATAVERSE_SP_CLIENT_SECRET=
+DATAVERSE_SP_TENANT_ID=
+
+# Power Automate
+POWER_AUTOMATE_APPROVAL_URL=
+
+# Azure
+APPLICATION_INSIGHTS_CONNECTION_STRING=
+AZURE_SERVICE_BUS_CONNECTION_STRING=
+AZURE_KEY_VAULT_URL=
+AZURE_FUNCTION_KEY=
+
+# MCP
+MCP_DATA_MODE=mock
+```
+
+---
+
+## MVP Build Order
+
+1. [docs/00-setup.md](docs/00-setup.md) — install everything
+2. [docs/01-project-setup.md](docs/01-project-setup.md) — structure + contracts
+3. [docs/02-mcp-server.md](docs/02-mcp-server.md) — MCP Server with first tools
+4. [docs/03-mcp-tools-extended.md](docs/03-mcp-tools-extended.md) — remaining tools
+5. [docs/04-orchestrator-api.md](docs/04-orchestrator-api.md) — Azure Function API
+6. [docs/05-pulumi-infrastructure.md](docs/05-pulumi-infrastructure.md) — Pulumi + Azure
+7. [docs/06-dataverse-setup.md](docs/06-dataverse-setup.md) — Dataverse tables + data
+8. [docs/07-dataverse-integration.md](docs/07-dataverse-integration.md) — replace mocks
+9. [docs/08-secure-rag.md](docs/08-secure-rag.md) — Azure AI Search
+10. [docs/09-agent-framework.md](docs/09-agent-framework.md) — SK agents + Copilot Studio
+11. [docs/10-observability-polish.md](docs/10-observability-polish.md) — cost + demo
+
+**Post-MVP:** Microsoft 365 Agents SDK — custom-engine agent surface via Agents Playground, reusing the same Orchestrator API and MCP tool layer.

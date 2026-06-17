@@ -1,0 +1,12 @@
+[
+  {
+    "returnId": "ret-3001",
+    "orderId": "ord-1001",
+    "orderItemId": "oi-001",
+    "reason": "Delivery delay - product not received in time",
+    "status": "Requested",
+    "requestedDate": "2026-06-14T11:00:00Z",
+    "approvedDate": null,
+    "refundRequired": true
+  }
+]

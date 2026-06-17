@@ -1,0 +1,12 @@
+[
+  {
+    "refundId": "ref-4001",
+    "orderId": "ord-1001",
+    "returnId": "ret-3001",
+    "amount": 49.99,
+    "status": "Pending Approval",
+    "reason": "Delivery delay compensation",
+    "requiresApproval": true,
+    "approvedBy": null
+  }
+]
