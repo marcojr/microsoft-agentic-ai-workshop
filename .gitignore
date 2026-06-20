@@ -35,6 +35,7 @@ AzuriteConfig
 .env
 .env.*
 !.env.example
+infrastructure/config/azure-context.json
 
 # Logs
 *.log

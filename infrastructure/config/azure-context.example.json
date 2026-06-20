@@ -1,0 +1,77 @@
+{
+  "subscription": {
+    "id": "00000000-0000-0000-0000-000000000000",
+    "name": "My Azure Subscription"
+  },
+  "workload": {
+    "root": "agentops",
+    "description": "Enterprise AgentOps Control Tower"
+  },
+  "environment": "dev",
+  "location": {
+    "name": "uksouth",
+    "short": "uks"
+  },
+  "sequence": {
+    "current": "001",
+    "next": "002",
+    "padTo": 3,
+    "incrementOnDecommission": true
+  },
+  "lifecycle": {
+    "environmentMode": "ephemeral-study",
+    "destroyWholeResourceGroup": true,
+    "restoreFromRecoveryOnProvision": true,
+    "exportStateBeforeDestroy": true
+  },
+  "naming": {
+    "standard": "microsoft-caf",
+    "sourceUrls": [
+      "https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-naming",
+      "https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-abbreviations",
+      "https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-name-rules"
+    ]
+  },
+  "tags": {
+    "workload": "agentops",
+    "environment": "dev",
+    "owner": "",
+    "costCenter": "",
+    "managedBy": "pulumi",
+    "source": "bootstrap-script"
+  },
+  "recovery": {
+    "enabled": true,
+    "subscription": {
+      "id": "00000000-0000-0000-0000-000000000000",
+      "name": "My Azure Subscription"
+    },
+    "resourceGroup": "rg-agentops-state",
+    "storageAccount": "stagentopsstateuks001",
+    "container": "environment-dumps",
+    "pathPrefix": "agentops/dev"
+  },
+  "bootstrapData": {
+    "ingestOnProvision": true,
+    "localSeedPaths": [
+      "data/sample-documents",
+      "data/sample-dataverse-records"
+    ],
+    "recoveryBlobFolders": [
+      "dataverse-dumps",
+      "blob-dumps",
+      "knowledge-files"
+    ]
+  },
+  "resources": {
+    "resourceGroup": "rg-agentops-dev-001",
+    "storageAccount": "stagentopsdevuks001",
+    "functionApp": "func-agentops-dev-001",
+    "appInsights": "appi-agentops-dev-uks-001",
+    "logAnalyticsWorkspace": "log-agentops-dev-uks-001",
+    "keyVault": "kv-agentops-dev-uks-001",
+    "serviceBusNamespace": "sbns-agentops-dev-001",
+    "aiSearch": "srch-agentops-dev-001",
+    "azureOpenAi": "oai-agentops-dev-uks-001"
+  }
+}

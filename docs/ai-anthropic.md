@@ -1,5 +1,9 @@
 # Anthropic — Integration Guide
 
+Status: optional legacy reference. The active runtime path for this repo is Azure OpenAI + Gemini.
+
+Anthropic is intentionally not part of the active Microsoft case because the project demonstrates Azure OpenAI through Microsoft Foundry (formerly Azure AI Foundry). Keep this document only as a comparison/reference note.
+
 How to use the Anthropic API (Claude models) in this project.
 
 ---
@@ -8,9 +12,9 @@ How to use the Anthropic API (Claude models) in this project.
 
 | Model | ID | Usage | Input / Output (per 1M tokens) |
 |---|---|---|---|
-| Claude Sonnet 4.6 | `claude-sonnet-4-6` | Draft Agent, Orchestrator summary | $3.00 / $15.00 |
-| Claude Haiku 4.5 | `claude-haiku-4-5-20251001` | Intake, Critic, Governance agents | $0.80 / $4.00 |
-| Claude Opus 4.8 | `claude-opus-4-8` | Complex reasoning (optional) | $15.00 / $75.00 |
+| Claude Sonnet 4.6 | `claude-sonnet-4-6` | Legacy drafting example only | $3.00 / $15.00 |
+| Claude Haiku 4.5 | `claude-haiku-4-5-20251001` | Legacy classification example only | $0.80 / $4.00 |
+| Claude Opus 4.8 | `claude-opus-4-8` | Legacy complex reasoning example only | $15.00 / $75.00 |
 
 ---
 
@@ -195,7 +199,7 @@ def run_intake_agent(user_message: str) -> dict:
 
 ---
 
-## Semantic Kernel Integration
+## Legacy Semantic Kernel Integration
 
 Semantic Kernel wraps the Anthropic client transparently via the `AnthropicChatCompletion` connector:
 
@@ -210,14 +214,14 @@ kernel.add_service(AnthropicChatCompletion(
 ))
 ```
 
-The same kernel, plugins and pipelines run unchanged regardless of whether the provider is Anthropic or OpenAI. See [docs/09-agent-framework.md](09-agent-framework.md).
+This is not used by the active project runtime. See [docs/09-agent-framework.md](09-agent-framework.md) for the current direction: Microsoft Agent Framework, with one Semantic Kernel Draft Agent kept for comparison.
 
 ---
 
-## Best Practices
+## Legacy Notes
 
-- Use `claude-haiku-4-5-20251001` for classification and evaluation — it is significantly cheaper and fast enough for structured JSON output
-- Use `claude-sonnet-4-6` for the Draft Agent where prose quality matters
+- Do not use Claude models in the active Microsoft case.
+- If Anthropic is revisited later, keep it as an explicit comparison provider, not as the default runtime.
 - Always log `input_tokens` and `output_tokens` from `message.usage` — never estimate
 - Set `max_tokens` to a realistic ceiling; overshooting wastes budget on latency buffers
 - Keep system prompts focused — one agent, one task; split roles across agents rather than mega-prompts

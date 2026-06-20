@@ -19,13 +19,14 @@ Everything you need to install before starting development on the Enterprise Age
 | Power Platform | Power Platform CLI (pac) | Yes |
 | Editor | VS Code | Yes |
 | Storage emulator | Azurite | Yes |
-| Containers | Docker Desktop | Recommended |
-| AI | Anthropic SDK | Yes |
+| Containers | Docker Desktop | Optional |
 | AI | OpenAI SDK + Codex CLI | Yes |
+| AI | Google Gen AI SDK / Gemini API | Yes |
+| AI | Azure OpenAI / Microsoft Foundry (formerly Azure AI Foundry) | Yes |
 | Cloud | Azure subscription | Yes |
 | Cloud | M365 Developer Tenant | Yes |
 | Cloud | Copilot Studio trial | Yes |
-| Cloud | Azure AI Foundry | Recommended |
+| Cloud | Microsoft Foundry (formerly Azure AI Foundry) | Recommended |
 
 ---
 
@@ -213,7 +214,7 @@ pulumi login
 
 ```bash
 # Inside infrastructure/pulumi/
-npm install @pulumi/azure-native @pulumi/pulumi
+dotnet restore
 ```
 
 ---
@@ -270,21 +271,24 @@ docker run -p 10000:10000 -p 10001:10001 -p 10002:10002 mcr.microsoft.com/azure-
 
 ## Group 7 — AI SDKs and Codex CLI
 
-### Anthropic SDK (Python)
-
-Installed automatically via `uv sync` in the MCP Server project.
-To install globally:
-```bash
-pip install anthropic
-```
-
-See full guide: [docs/ai-anthropic.md](ai-anthropic.md)
-
 ### OpenAI SDK (Python)
 
 ```bash
 pip install openai
 ```
+
+### Google Gen AI SDK / Gemini API (Python)
+
+Installed automatically via `uv sync` in the MCP Server project.
+To install globally:
+
+```bash
+pip install google-genai
+```
+
+Gemini API keys should use `GEMINI_API_KEY`. Google also supports `GOOGLE_API_KEY`, but this repo standardizes on `GEMINI_API_KEY`.
+
+Source: https://ai.google.dev/gemini-api/docs/api-key
 
 ### OpenAI Codex CLI (required for code generation)
 
@@ -316,11 +320,34 @@ See full guide: [docs/ai-codex.md](ai-codex.md)
 
 1. Create a free account at https://azure.microsoft.com/free — $200 credit
 2. Or use an existing subscription.
-3. Create the resource group:
+3. Bootstrap the local Azure context and naming file:
 
 ```bash
-az group create --name rg-agentops-dev --location uksouth
+powershell -ExecutionPolicy Bypass -File .\infrastructure\scripts\Initialize-AzureContext.ps1
 ```
+
+This script:
+
+- logs in with Azure CLI if needed
+- lists subscriptions and lets you choose one
+- asks for workload root, environment, region, and starting sequence number
+- generates Microsoft CAF-style resource names
+- saves the result to `infrastructure/config/azure-context.json`
+- stores persistent recovery blob settings outside the disposable workload resource group
+
+For disposable lab environments, destroy with:
+
+```bash
+powershell -ExecutionPolicy Bypass -File .\infrastructure\scripts\Remove-AzureEnvironment.ps1
+```
+
+This deletes the whole workload resource group and advances the sequence in `azure-context.json` so the next environment uses fresh names.
+
+Naming source:
+
+- https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-naming
+- https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-abbreviations
+- https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-name-rules
 
 ### Microsoft 365 Developer Tenant (required for Copilot Studio + Dataverse)
 
@@ -334,11 +361,15 @@ az group create --name rg-agentops-dev --location uksouth
 2. Sign in with your M365 Developer account.
 3. Start the trial.
 
-### Azure AI Foundry (recommended from Day 9)
+### Microsoft Foundry (formerly Azure AI Foundry) (recommended from Day 9)
+
+Official docs:
+- Microsoft Foundry overview: https://learn.microsoft.com/en-us/azure/foundry/what-is-foundry
+- Azure OpenAI model availability and lifecycle: https://learn.microsoft.com/en-us/azure/foundry/openai/concepts/model-retirement-schedule
 
 1. Go to https://ai.azure.com
 2. Create a Foundry project.
-3. Deploy a model: `gpt-4o-mini` or `gpt-4.1-mini`.
+3. Deploy model `gpt-5-mini` for this case.
 4. Note the endpoint and API key.
 
 ---
@@ -365,15 +396,23 @@ Copy `.env.example` to `.env` in the MCP Server root:
 
 ```env
 # AI Providers
-ANTHROPIC_API_KEY=sk-ant-...
-OPENAI_API_KEY=sk-...
+GEMINI_API_KEY=...
+
+AI_PRIMARY_PROVIDER=azure_openai
+AI_PRIMARY_VENDOR=Azure OpenAI
+AI_PRIMARY_MODEL=gpt-5-mini
+
+AI_SECONDARY_PROVIDER=gemini
+AI_SECONDARY_VENDOR=Gemini
+AI_SECONDARY_MODEL=gemini-3.5-flash
 
 # MCP Server mode
 MCP_DATA_MODE=mock
 
-# Azure (fill in from Day 5)
+# Azure (fill in from Pulumi outputs / Key Vault)
 AZURE_OPENAI_ENDPOINT=
 AZURE_OPENAI_API_KEY=
+AZURE_OPENAI_DEPLOYMENT_NAME=gpt-5-mini
 AZURE_AI_SEARCH_ENDPOINT=
 AZURE_AI_SEARCH_KEY=
 AZURE_AI_SEARCH_INDEX=enterprise-knowledge
@@ -429,7 +468,7 @@ Do not install or provision these resources before the indicated days:
 | Service Bus | Day 5 (via Pulumi) |
 | Dataverse tables | Day 6 |
 | Copilot Studio agent | Day 9 |
-| Azure AI Foundry agent | Day 9 |
+| Microsoft Foundry (formerly Azure AI Foundry) agent | Day 9 |
 | Power BI dashboard | Day 10 |
 
 ---
@@ -437,3 +476,4 @@ Do not install or provision these resources before the indicated days:
 ## Next Step
 
 [docs/01-project-setup.md](01-project-setup.md) — Day 1: repository structure and contracts.
+

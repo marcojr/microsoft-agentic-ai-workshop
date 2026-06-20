@@ -1,0 +1,185 @@
+{
+  "version": "1.0",
+  "notes": [
+    "This v1 schema is optimized for scripted creation through the Dataverse Web API.",
+    "Reference columns such as cr_contactid and cr_orderid are stored as text values instead of true Dataverse lookups."
+  ],
+  "tables": [
+    {
+      "logicalName": "cr_order",
+      "schemaName": "cr_Order",
+      "entitySetName": "cr_orders",
+      "displayName": "Order",
+      "displayCollectionName": "Orders",
+      "description": "AgentOps order records",
+      "primaryNameAttribute": {
+        "logicalName": "cr_orderkey",
+        "schemaName": "cr_OrderKey",
+        "displayName": "Order Key",
+        "maxLength": 100
+      },
+      "columns": [
+        { "type": "string", "logicalName": "cr_ordernumber", "schemaName": "cr_OrderNumber", "displayName": "Order Number", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_accountid", "schemaName": "cr_AccountId", "displayName": "Account ID", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_contactid", "schemaName": "cr_ContactId", "displayName": "Contact ID", "maxLength": 100 },
+        { "type": "datetime", "logicalName": "cr_orderdate", "schemaName": "cr_OrderDate", "displayName": "Order Date" },
+        { "type": "string", "logicalName": "cr_status", "schemaName": "cr_Status", "displayName": "Status", "maxLength": 100 },
+        { "type": "money", "logicalName": "cr_totalamount", "schemaName": "cr_TotalAmount", "displayName": "Total Amount", "precision": 2 },
+        { "type": "string", "logicalName": "cr_paymentstatus", "schemaName": "cr_PaymentStatus", "displayName": "Payment Status", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_deliverystatus", "schemaName": "cr_DeliveryStatus", "displayName": "Delivery Status", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_shipmentkeyref", "schemaName": "cr_ShipmentKeyRef", "displayName": "Shipment Key", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_risklevel", "schemaName": "cr_RiskLevel", "displayName": "Risk Level", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_deliveryaddress", "schemaName": "cr_DeliveryAddress", "displayName": "Delivery Address", "maxLength": 250 },
+        { "type": "string", "logicalName": "cr_deliverypostcode", "schemaName": "cr_DeliveryPostcode", "displayName": "Delivery Postcode", "maxLength": 50 }
+      ]
+    },
+    {
+      "logicalName": "cr_orderitem",
+      "schemaName": "cr_OrderItem",
+      "entitySetName": "cr_orderitems",
+      "displayName": "Order Item",
+      "displayCollectionName": "Order Items",
+      "description": "AgentOps order line items",
+      "primaryNameAttribute": {
+        "logicalName": "cr_orderitemkey",
+        "schemaName": "cr_OrderItemKey",
+        "displayName": "Order Item Key",
+        "maxLength": 100
+      },
+      "columns": [
+        { "type": "string", "logicalName": "cr_orderkeyref", "schemaName": "cr_OrderKeyRef", "displayName": "Order Key", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_productname", "schemaName": "cr_ProductName", "displayName": "Product Name", "maxLength": 200 },
+        { "type": "string", "logicalName": "cr_sku", "schemaName": "cr_Sku", "displayName": "SKU", "maxLength": 100 },
+        { "type": "integer", "logicalName": "cr_quantity", "schemaName": "cr_Quantity", "displayName": "Quantity", "minValue": 0, "maxValue": 1000000 },
+        { "type": "money", "logicalName": "cr_unitprice", "schemaName": "cr_UnitPrice", "displayName": "Unit Price", "precision": 2 },
+        { "type": "money", "logicalName": "cr_totalprice", "schemaName": "cr_TotalPrice", "displayName": "Total Price", "precision": 2 }
+      ]
+    },
+    {
+      "logicalName": "cr_shipment",
+      "schemaName": "cr_Shipment",
+      "entitySetName": "cr_shipments",
+      "displayName": "Shipment",
+      "displayCollectionName": "Shipments",
+      "description": "AgentOps shipment records",
+      "primaryNameAttribute": {
+        "logicalName": "cr_shipmentkey",
+        "schemaName": "cr_ShipmentKey",
+        "displayName": "Shipment Key",
+        "maxLength": 100
+      },
+      "columns": [
+        { "type": "string", "logicalName": "cr_orderkeyref", "schemaName": "cr_OrderKeyRef", "displayName": "Order Key", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_carrier", "schemaName": "cr_Carrier", "displayName": "Carrier", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_trackingnumber", "schemaName": "cr_TrackingNumber", "displayName": "Tracking Number", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_status", "schemaName": "cr_Status", "displayName": "Status", "maxLength": 100 },
+        { "type": "date", "logicalName": "cr_estimateddeliverydate", "schemaName": "cr_EstimatedDeliveryDate", "displayName": "Estimated Delivery Date" },
+        { "type": "datetime", "logicalName": "cr_delivereddate", "schemaName": "cr_DeliveredDate", "displayName": "Delivered Date" },
+        { "type": "string", "logicalName": "cr_delayreason", "schemaName": "cr_DelayReason", "displayName": "Delay Reason", "maxLength": 250 },
+        { "type": "string", "logicalName": "cr_originpostcode", "schemaName": "cr_OriginPostcode", "displayName": "Origin Postcode", "maxLength": 50 },
+        { "type": "string", "logicalName": "cr_destinationpostcode", "schemaName": "cr_DestinationPostcode", "displayName": "Destination Postcode", "maxLength": 50 },
+        { "type": "decimal", "logicalName": "cr_routedistancekm", "schemaName": "cr_RouteDistanceKm", "displayName": "Route Distance Km", "precision": 2, "minValue": 0, "maxValue": 1000000 }
+      ]
+    },
+    {
+      "logicalName": "cr_returnrequest",
+      "schemaName": "cr_ReturnRequest",
+      "entitySetName": "cr_returnrequests",
+      "displayName": "Return Request",
+      "displayCollectionName": "Return Requests",
+      "description": "AgentOps return requests",
+      "primaryNameAttribute": {
+        "logicalName": "cr_returnkey",
+        "schemaName": "cr_ReturnKey",
+        "displayName": "Return Key",
+        "maxLength": 100
+      },
+      "columns": [
+        { "type": "string", "logicalName": "cr_orderkeyref", "schemaName": "cr_OrderKeyRef", "displayName": "Order Key", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_orderitemkeyref", "schemaName": "cr_OrderItemKeyRef", "displayName": "Order Item Key", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_reason", "schemaName": "cr_Reason", "displayName": "Reason", "maxLength": 250 },
+        { "type": "string", "logicalName": "cr_status", "schemaName": "cr_Status", "displayName": "Status", "maxLength": 100 },
+        { "type": "datetime", "logicalName": "cr_requesteddate", "schemaName": "cr_RequestedDate", "displayName": "Requested Date" },
+        { "type": "boolean", "logicalName": "cr_refundrequired", "schemaName": "cr_RefundRequired", "displayName": "Refund Required" }
+      ]
+    },
+    {
+      "logicalName": "cr_refund",
+      "schemaName": "cr_Refund",
+      "entitySetName": "cr_refunds",
+      "displayName": "Refund",
+      "displayCollectionName": "Refunds",
+      "description": "AgentOps refund records",
+      "primaryNameAttribute": {
+        "logicalName": "cr_refundkey",
+        "schemaName": "cr_RefundKey",
+        "displayName": "Refund Key",
+        "maxLength": 100
+      },
+      "columns": [
+        { "type": "string", "logicalName": "cr_orderkeyref", "schemaName": "cr_OrderKeyRef", "displayName": "Order Key", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_returnkeyref", "schemaName": "cr_ReturnKeyRef", "displayName": "Return Key", "maxLength": 100 },
+        { "type": "money", "logicalName": "cr_amount", "schemaName": "cr_Amount", "displayName": "Amount", "precision": 2 },
+        { "type": "string", "logicalName": "cr_status", "schemaName": "cr_Status", "displayName": "Status", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_reason", "schemaName": "cr_Reason", "displayName": "Reason", "maxLength": 250 },
+        { "type": "boolean", "logicalName": "cr_requiresapproval", "schemaName": "cr_RequiresApproval", "displayName": "Requires Approval" },
+        { "type": "string", "logicalName": "cr_approvedby", "schemaName": "cr_ApprovedBy", "displayName": "Approved By", "maxLength": 150 }
+      ]
+    },
+    {
+      "logicalName": "cr_approvalrequest",
+      "schemaName": "cr_ApprovalRequest",
+      "entitySetName": "cr_approvalrequests",
+      "displayName": "Approval Request",
+      "displayCollectionName": "Approval Requests",
+      "description": "AgentOps approval requests",
+      "primaryNameAttribute": {
+        "logicalName": "cr_approvalkey",
+        "schemaName": "cr_ApprovalKey",
+        "displayName": "Approval Key",
+        "maxLength": 100
+      },
+      "columns": [
+        { "type": "string", "logicalName": "cr_relatedrecordid", "schemaName": "cr_RelatedRecordId", "displayName": "Related Record ID", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_relatedrecordtype", "schemaName": "cr_RelatedRecordType", "displayName": "Related Record Type", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_requestedby", "schemaName": "cr_RequestedBy", "displayName": "Requested By", "maxLength": 150 },
+        { "type": "string", "logicalName": "cr_approvaltype", "schemaName": "cr_ApprovalType", "displayName": "Approval Type", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_status", "schemaName": "cr_Status", "displayName": "Status", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_risklevel", "schemaName": "cr_RiskLevel", "displayName": "Risk Level", "maxLength": 100 },
+        { "type": "memo", "logicalName": "cr_reason", "schemaName": "cr_Reason", "displayName": "Reason", "maxLength": 4000 },
+        { "type": "string", "logicalName": "cr_approvedby", "schemaName": "cr_ApprovedBy", "displayName": "Approved By", "maxLength": 150 }
+      ]
+    },
+    {
+      "logicalName": "cr_agentrun",
+      "schemaName": "cr_AgentRun",
+      "entitySetName": "cr_agentruns",
+      "displayName": "Agent Run",
+      "displayCollectionName": "Agent Runs",
+      "description": "AgentOps observability records",
+      "primaryNameAttribute": {
+        "logicalName": "cr_runkey",
+        "schemaName": "cr_RunKey",
+        "displayName": "Run Key",
+        "maxLength": 100
+      },
+      "columns": [
+        { "type": "string", "logicalName": "cr_workflowname", "schemaName": "cr_WorkflowName", "displayName": "Workflow Name", "maxLength": 150 },
+        { "type": "string", "logicalName": "cr_intent", "schemaName": "cr_Intent", "displayName": "Intent", "maxLength": 150 },
+        { "type": "string", "logicalName": "cr_modelused", "schemaName": "cr_ModelUsed", "displayName": "Model Used", "maxLength": 150 },
+        { "type": "string", "logicalName": "cr_vendorused", "schemaName": "cr_VendorUsed", "displayName": "Vendor Used", "maxLength": 150 },
+        { "type": "datetime", "logicalName": "cr_startedat", "schemaName": "cr_StartedAt", "displayName": "Started At" },
+        { "type": "string", "logicalName": "cr_status", "schemaName": "cr_Status", "displayName": "Status", "maxLength": 100 },
+        { "type": "integer", "logicalName": "cr_inputtokens", "schemaName": "cr_InputTokens", "displayName": "Input Tokens", "minValue": 0, "maxValue": 2000000000 },
+        { "type": "integer", "logicalName": "cr_outputtokens", "schemaName": "cr_OutputTokens", "displayName": "Output Tokens", "minValue": 0, "maxValue": 2000000000 },
+        { "type": "decimal", "logicalName": "cr_estimatedcost", "schemaName": "cr_EstimatedCost", "displayName": "Estimated Cost", "precision": 6, "minValue": 0, "maxValue": 1000000 },
+        { "type": "integer", "logicalName": "cr_latencyms", "schemaName": "cr_LatencyMs", "displayName": "Latency Ms", "minValue": 0, "maxValue": 2000000000 },
+        { "type": "memo", "logicalName": "cr_toolscalled", "schemaName": "cr_ToolsCalled", "displayName": "Tools Called", "maxLength": 4000 },
+        { "type": "boolean", "logicalName": "cr_requiresapproval", "schemaName": "cr_RequiresApproval", "displayName": "Requires Approval" },
+        { "type": "decimal", "logicalName": "cr_riskscore", "schemaName": "cr_RiskScore", "displayName": "Risk Score", "precision": 4, "minValue": 0, "maxValue": 1000 },
+        { "type": "decimal", "logicalName": "cr_qualityscore", "schemaName": "cr_QualityScore", "displayName": "Quality Score", "precision": 4, "minValue": 0, "maxValue": 1000 },
+        { "type": "decimal", "logicalName": "cr_groundednessscore", "schemaName": "cr_GroundednessScore", "displayName": "Groundedness Score", "precision": 4, "minValue": 0, "maxValue": 1000 }
+      ]
+    }
+  ]
+}

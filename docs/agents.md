@@ -6,14 +6,21 @@ All agents in the Enterprise AgentOps Control Tower. Each agent has a defined ro
 
 ## Overview
 
+Default active direction:
+- New pro-code agents use Microsoft Agent Framework.
+- The Draft Agent is intentionally the only Semantic Kernel agent, kept for comparison, didactics and legacy understanding.
+- Azure OpenAI `gpt-5-mini` is the primary model for the Microsoft case.
+- Gemini `gemini-3.5-flash` is the secondary comparison model.
+- Anthropic/Claude is not part of the active runtime path.
+
 | Agent | Role | Primary Model | File |
 |---|---|---|---|
-| Intake | Classify request, extract intent | claude-haiku-4-5-20251001 | `agents/intake_agent.py` |
+| Intake | Classify request, extract intent | gpt-5-mini | `agents/intake_agent.py` |
 | Data | Fetch data via MCP tools | Orchestrator (no LLM) | `agents/data_agent.py` |
 | Knowledge | Retrieve policy documents | Azure AI Search | `agents/knowledge_agent.py` |
-| Governance | Check approval requirements | claude-haiku-4-5-20251001 | `agents/governance_agent.py` |
-| Draft | Generate response summary | claude-sonnet-4-6 | `agents/draft_agent.py` |
-| Critic/Evaluator | Evaluate quality and compliance | claude-haiku-4-5-20251001 | `agents/critic_agent.py` |
+| Governance | Check approval requirements | gpt-5-mini | `agents/governance_agent.py` |
+| Draft | Generate response summary | gpt-5-mini | `apps/orchestrator-api/src/agents/draft_agent.py` |
+| Critic/Evaluator | Evaluate quality and compliance | gpt-5-mini | `agents/critic_agent.py` |
 | Cost | Track token usage and cost | No LLM — calculation | `agents/cost_agent.py` |
 | Workflow | Log run and trigger approvals | No LLM — orchestration | `agents/workflow_agent.py` |
 
@@ -25,6 +32,20 @@ All agents and coding assistants working on this project must update `progress.m
 
 Keep entries short, chronological and factual.
 
+## Code Commenting Rule
+
+Agent code must include short step-by-step comments in English.
+
+The comments should make the execution flow easy to follow for learning:
+- validate configuration
+- build the agent/kernel/client
+- prepare grounded context
+- call the model or tool
+- validate the response
+- extract telemetry/cost metadata
+
+Avoid noisy comments that merely repeat the code.
+
 ---
 
 ## Intake Agent
@@ -33,7 +54,9 @@ Keep entries short, chronological and factual.
 
 **File:** `agents/intake_agent.py`
 
-**Model:** `claude-haiku-4-5-20251001` (fast, cheap classification)
+**Model:** `gpt-5-mini` through Azure OpenAI.
+
+**Framework:** Microsoft Agent Framework.
 
 **System Prompt:**
 
@@ -155,7 +178,9 @@ def run(self, query: str) -> dict:
 
 **File:** `agents/governance_agent.py`
 
-**Model:** `claude-haiku-4-5-20251001`
+**Model:** `gpt-5-mini` through Azure OpenAI.
+
+**Framework:** Microsoft Agent Framework.
 
 **System Prompt:**
 
@@ -191,9 +216,11 @@ Output ONLY valid JSON:
 
 **Purpose:** Generate a professional, grounded summary for the support agent to review before sending to the customer.
 
-**File:** `agents/draft_agent.py`
+**File:** `apps/orchestrator-api/src/agents/draft_agent.py`
 
-**Model:** `claude-sonnet-4-6` (highest quality drafting)
+**Model:** `gpt-5-mini` by default. Gemini can be used as the secondary provider.
+
+**Framework:** Semantic Kernel. This is intentional. It is the single comparison agent kept so we can study how Semantic Kernel maps to the newer Microsoft Agent Framework direction.
 
 **System Prompt:**
 
@@ -229,7 +256,9 @@ Sources: ord-1001, ship-9001, ret-3001, ref-4001, ka-001, ka-002
 
 **File:** `agents/critic_agent.py`
 
-**Model:** `claude-haiku-4-5-20251001`
+**Model:** `gpt-5-mini` through Azure OpenAI.
+
+**Framework:** Microsoft Agent Framework.
 
 **System Prompt:**
 
@@ -277,11 +306,11 @@ Delegates to `calculate_agent_run_cost` MCP tool. See [docs/03-mcp-tools-extende
 
 ```json
 {
-  "vendor": "Anthropic",
-  "model": "claude-sonnet-4-6",
+  "vendor": "OpenAI",
+  "model": "gpt-5-mini",
   "inputTokens": 1800,
   "outputTokens": 450,
-  "estimatedCost": 0.00936,
+  "estimatedCost": 0.00144,
   "currency": "USD"
 }
 ```
@@ -298,9 +327,9 @@ Delegates to `log_agent_run` and `create_approval_request` MCP tools. See [docs/
 
 ---
 
-## Azure AI Foundry: Policy Agent
+## Microsoft Foundry (formerly Azure AI Foundry): Policy Agent
 
-**Purpose:** A standalone RAG agent in Azure AI Foundry that answers governance and policy questions grounded in enterprise documents.
+**Purpose:** A standalone RAG agent in Microsoft Foundry (formerly Azure AI Foundry) that answers governance and policy questions grounded in enterprise documents.
 
 **Setup:** See [docs/09-agent-framework.md](09-agent-framework.md)
 
@@ -330,25 +359,19 @@ Output JSON:
 
 ## Provider Switching
 
-All agents that use an LLM support switching between Anthropic and OpenAI via the `provider` parameter:
+All agents that use an LLM should read provider settings from `.env`.
 
 ```python
-# Anthropic (default)
-pipeline = WebshopOrderSupportPipeline(provider="anthropic")
-
-# OpenAI
-pipeline = WebshopOrderSupportPipeline(provider="openai")
-
-# Azure OpenAI
-pipeline = WebshopOrderSupportPipeline(provider="azure")
+pipeline = WebshopOrderSupportPipeline(provider="azure_openai")
+secondary_pipeline = WebshopOrderSupportPipeline(provider="gemini")
 ```
 
 Model mapping:
 
 | Provider | Draft Agent | Intake / Critic / Governance |
 |---|---|---|
-| `anthropic` | claude-sonnet-4-6 | claude-haiku-4-5-20251001 |
-| `openai` | gpt-4.1-mini | gpt-4.1-mini |
-| `azure` | gpt-4o-mini | gpt-4o-mini |
+| `azure_openai` | gpt-5-mini | gpt-5-mini |
+| `gemini` | gemini-3.5-flash | gemini-3.5-flash |
 
-See [docs/ai-anthropic.md](ai-anthropic.md) and [docs/ai-codex.md](ai-codex.md) for full provider guides.
+See [docs/ai-azure-openai.md](ai-azure-openai.md) and [docs/ai-gemini.md](ai-gemini.md) for provider guides.
+

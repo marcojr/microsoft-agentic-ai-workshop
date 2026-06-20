@@ -1,0 +1,205 @@
+Azure AI Foundry / Microsoft Foundry não é uma ferramenta. É uma stack de produção para agentes: modelos + ferramentas + orquestração + dados + observabilidade + segurança/governança.
+
+A Microsoft descreve o Foundry Agent Service como uma plataforma gerenciada para construir, publicar e escalar agentes, usando modelos do Foundry catalog e frameworks como Microsoft Agent Framework, LangGraph ou código próprio.
+
+O que é essencial para você
+1. Foundry como “control plane” de agentes
+
+Você precisa entender o Foundry como o lugar onde a empresa organiza:
+
+modelos
+agents
+tools
+observability
+evaluation
+tracing
+RBAC
+governance
+policies
+monitoring
+
+A Microsoft posiciona o Microsoft Foundry como uma plataforma que unifica agents, models e tools com tracing, monitoring, evaluations, RBAC, networking e policies.
+
+Para entrevista, sua frase é:
+
+“I see Microsoft Foundry as the enterprise control plane for agents, models, tools, evaluation, observability and governance.”
+
+Isso é muito bom.
+
+2. Foundry Agent Service
+
+Esse é obrigatório.
+
+Você precisa saber explicar:
+
+quando usar Foundry Agent Service;
+quando usar Copilot Studio;
+quando usar Agent Framework/Semantic Kernel;
+quando usar seu próprio backend/orchestrator;
+como tools entram no agente;
+como knowledge entra no agente;
+como avaliação e tracing entram em produção.
+
+Frase boa:
+
+“Copilot Studio is the business-facing low-code agent layer. Foundry Agent Service is the managed Azure agent runtime. Agent Framework / Semantic Kernel is the pro-code orchestration layer when I need deeper control.”
+
+3. Microsoft Agent Framework / Semantic Kernel
+
+Aqui está uma das peças mais importantes do seu reposicionamento.
+
+A Microsoft diz que o Microsoft Agent Framework é sucessor direto de Semantic Kernel e AutoGen, combinando abstrações de agentes/multi-agent com features enterprise como state management, type safety, filters, telemetry e suporte a modelos/embeddings.
+
+Então você precisa saber:
+
+single-agent pattern
+multi-agent orchestration
+tool calling
+state/session management
+middleware/filters
+telemetry
+workflow graph
+quando usar pro-code em vez de Copilot Studio
+
+Você não precisa fingir que é guru disso hoje. Mas precisa aprender rápido e fazer o projeto.
+
+4. Tools: o coração de agentic AI
+
+No gráfico aparece “toolchain”. Para você, isso é central.
+
+Um agente enterprise não é só LLM respondendo. Ele precisa chamar tools:
+
+buscar cliente
+buscar pedido
+consultar Dataverse
+abrir aprovação
+consultar RAG
+chamar API
+calcular custo
+criar tarefa
+validar endereço
+consultar política
+registrar auditoria
+
+A documentação de Foundry Agent Service diz que tools permitem que agentes tomem ação: buscar na web, rodar código, consultar dados ou chamar APIs.
+
+Seu projeto com MCP Server cai exatamente aqui.
+
+Frase boa:
+
+“For me, the real enterprise value of agents is in controlled tools: typed, auditable, permission-aware actions connected to real business systems.”
+
+5. Azure AI Search / Secure RAG
+
+Isso é indispensável.
+
+Azure AI Search é descrito como serviço gerenciado que conecta dados a IA e permite que agents/LLMs usem contexto, histórico e sinais de múltiplas fontes para respostas grounded.
+
+Você precisa dominar:
+
+index
+chunking
+embeddings
+hybrid search
+semantic ranking
+citations
+metadata filters
+permission-aware retrieval
+SharePoint/Dataverse/docs
+RAG evaluation
+groundedness
+
+Frase boa:
+
+“I do not treat RAG as ‘upload PDFs and chat’. In enterprise scenarios, RAG needs search strategy, citations, access control, freshness, evaluation and auditability.”
+
+6. Observability, evaluation e tracing
+
+Essa é uma das áreas onde você pode se diferenciar.
+
+O gráfico mostra “Manage performance in production”. Para você, isso é GenAI Observability + AI Cost Engineering.
+
+Microsoft Foundry observability cobre evaluation, monitoring, tracing, token consumption, latency, error rates, quality scores, dashboards, OpenTelemetry e Application Insights.
+
+Você precisa falar com autoridade sobre:
+
+tokens in/out
+latency
+cost per run
+model used
+tool calls
+trace per agent run
+RAG sources
+groundedness
+quality score
+risk score
+approval status
+error rate
+fallback
+cost per business operation
+
+Frase boa:
+
+“An enterprise agent without tracing, evaluation and cost visibility is not production-ready. It is just a demo.”
+
+Essa é muito forte.
+
+7. Trustworthy AI / Responsible AI
+
+No gráfico, a camada de baixo é “Safeguard with Trustworthy AI”. Isso é importantíssimo para cargo enterprise.
+
+Você precisa entender:
+
+Azure AI Content Safety
+Microsoft Defender
+Entra ID
+Azure Policy
+App Gateway / APIM
+Key Vault
+Managed Identity
+RBAC
+private networking
+data leakage
+human approval
+audit trail
+policy enforcement
+
+Foundry também tem risk and safety evaluators para conteúdo nocivo e riscos específicos de agentes, como prohibited actions e sensitive data leakage.
+
+Frase boa:
+
+“My focus is not only building agents, but making them governable: identity, permissions, safety, audit, human approval, monitoring and cost control.”
+
+
+O que você deveria aprender primeiro
+
+A ordem certa para você:
+
+Foundry Agent Service
+Microsoft Agent Framework / Semantic Kernel
+Tools / MCP / API actions
+Azure AI Search + Secure RAG
+Evaluation + tracing + observability
+AI Cost Engineering
+Entra ID / RBAC / Managed Identity / Key Vault / APIM
+Content Safety / Responsible AI / risk evaluators
+Copilot Studio integration with this architecture
+Microsoft 365 Agents SDK depois
+
+Onde seu projeto encaixa nesse gráfico
+
+Seu Enterprise AgentOps Control Tower cobre as partes mais importantes:
+
+Design with models
+Você usa modelos via Foundry/OpenAI.
+
+Customize with agent toolchain
+Você usa Copilot Studio, Agent Framework/Semantic Kernel, MCP Server, Azure Functions, Power Automate, Logic Apps, Azure AI Search.
+
+Manage performance in production
+Você usa Application Insights, Azure Monitor, Power BI, token/cost logging.
+
+Safeguard with Trustworthy AI
+Você usa Entra ID, Key Vault, policies, approval workflow, risk scoring, content/evaluation concepts.
+
+Ou seja: seu projeto está muito bem alinhado com o ecossistema do gráfico.

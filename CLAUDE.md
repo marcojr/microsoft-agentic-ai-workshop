@@ -14,10 +14,12 @@ Secondary scenario: **Customer Support Case Intelligence Agent**
 
 | Provider | Role | Docs |
 |---|---|---|
-| Anthropic (Claude) | Agent reasoning, drafting, evaluation, governance | [docs/ai-anthropic.md](docs/ai-anthropic.md) |
-| OpenAI / Codex | Code generation, orchestration scripting, alternative LLM | [docs/ai-codex.md](docs/ai-codex.md) |
+| Azure OpenAI | Primary enterprise LLM path for the Microsoft case | [docs/ai-azure-openai.md](docs/ai-azure-openai.md) |
+| OpenAI / Codex | Direct API lab path, code generation, orchestration scripting | [docs/ai-codex.md](docs/ai-codex.md) |
+| Gemini | Secondary comparison/lab LLM path | [docs/ai-gemini.md](docs/ai-gemini.md) |
 
-Default model: `claude-sonnet-4-6` (Anthropic) or `gpt-4.1-mini` (OpenAI)
+Default runtime model: `gpt-5-mini` via Azure OpenAI.
+Secondary model: `gemini-3.5-flash` via Gemini.
 
 ---
 
@@ -37,21 +39,22 @@ Default model: `claude-sonnet-4-6` (Anthropic) or `gpt-4.1-mini` (OpenAI)
 │   ├── 06-dataverse-setup.md        ← day 6: Dataverse tables + sample data
 │   ├── 07-dataverse-integration.md  ← day 7: replace mocks with Dataverse
 │   ├── 08-secure-rag.md             ← day 8: Azure AI Search + RAG
-│   ├── 09-agent-framework.md        ← day 9: Semantic Kernel + Copilot Studio
+│   ├── 09-agent-framework.md        ← day 9: Microsoft Agent Framework + one Semantic Kernel comparison agent
 │   ├── 10-observability-polish.md   ← day 10: cost, dashboard, demo
 │   ├── agents.md                    ← all agents: roles, prompts, wiring
-│   ├── ai-anthropic.md              ← Anthropic integration guide
-│   └── ai-codex.md                  ← OpenAI Codex integration guide
+│   ├── ai-azure-openai.md           ← Azure OpenAI integration guide
+│   ├── ai-codex.md                  ← OpenAI Codex integration guide
+│   └── ai-gemini.md                 ← Gemini integration guide
 ├── mcp-server/                      ← Python MCP Server (start here)
 ├── apps/
 │   ├── orchestrator-api/            ← Azure Functions backend
 │   ├── frontend-demo/               ← optional demo UI
 │   └── m365-agent/                  ← post-MVP: Microsoft 365 Agents SDK
-├── agents/                          ← Semantic Kernel agent definitions
+├── agents/                          ← agent definitions and prompts
 ├── copilot-studio/                  ← Copilot Studio exports + screenshots
-├── foundry/                         ← Azure AI Foundry config
+├── foundry/                         ← Microsoft Foundry (formerly Azure AI Foundry) config
 ├── power-platform/                  ← Power Automate flows + Dataverse schema
-├── infrastructure/pulumi/           ← Pulumi IaC (TypeScript)
+├── infrastructure/pulumi/           ← Pulumi IaC (C#)
 ├── data/                            ← sample documents + seed scripts
 └── dashboards/                      ← Power BI reports + screenshots
 ```
@@ -89,8 +92,9 @@ pac auth create --url https://yourorg.crm.dynamics.com
 | Layer | Technology |
 |---|---|
 | Business Agent | Copilot Studio (Test Chat for MVP) |
-| Managed Agent | Azure AI Foundry / Foundry Agent Service |
-| Pro-code Orchestration | Semantic Kernel / Microsoft Agent Framework |
+| Managed Agent | Microsoft Foundry (formerly Azure AI Foundry) / Foundry Agent Service |
+| Pro-code Orchestration | Microsoft Agent Framework (successor to Semantic Kernel + AutoGen) |
+| Legacy/Comparison Agent | Semantic Kernel Draft Agent, kept intentionally for learning and comparison |
 | Custom-Engine Agent (Post-MVP) | Microsoft 365 Agents SDK / Agents Playground |
 | Governed Tool Layer | MCP Server (Python, FastMCP) |
 | Public MCP Server | OpenStreetMap / Geocoding MCP Server |
@@ -100,7 +104,7 @@ pac auth create --url https://yourorg.crm.dynamics.com
 | Workflow Automation | Power Automate + Logic Apps + Service Bus |
 | Observability | Application Insights + Azure Monitor |
 | Cost Dashboard | Power BI |
-| Infrastructure | Pulumi (TypeScript) |
+| Infrastructure | Pulumi (C#) |
 
 ---
 
@@ -118,6 +122,8 @@ pac auth create --url https://yourorg.crm.dynamics.com
 - Keep mock fallback mode even after Dataverse integration is complete.
 - Pulumi manages all Azure resources — do not create resources manually in the portal.
 - Dataverse runtime authentication standard is Service Principal. Use interactive `pac auth` only for maker/admin tasks.
+- Stage 9 uses Microsoft Agent Framework as the modern pro-code direction. Keep exactly one Semantic Kernel agent, the Draft Agent, for comparison, didactics and legacy understanding.
+- Agent/orchestration code must include short step-by-step English comments that explain the execution flow. Keep comments practical: explain why each major step exists, not obvious syntax.
 
 ---
 
@@ -125,12 +131,21 @@ pac auth create --url https://yourorg.crm.dynamics.com
 
 ```env
 # AI Providers
-ANTHROPIC_API_KEY=
 OPENAI_API_KEY=
+GEMINI_API_KEY=
+
+AI_PRIMARY_PROVIDER=azure_openai
+AI_PRIMARY_VENDOR=Azure OpenAI
+AI_PRIMARY_MODEL=gpt-5-mini
+
+AI_SECONDARY_PROVIDER=gemini
+AI_SECONDARY_VENDOR=Gemini
+AI_SECONDARY_MODEL=gemini-3.5-flash
 
 # Azure OpenAI (via Foundry)
 AZURE_OPENAI_ENDPOINT=
 AZURE_OPENAI_API_KEY=
+AZURE_OPENAI_DEPLOYMENT_NAME=gpt-5-mini
 
 # Azure AI Search
 AZURE_AI_SEARCH_ENDPOINT=
@@ -169,7 +184,7 @@ MCP_DATA_MODE=mock
 7. [docs/06-dataverse-setup.md](docs/06-dataverse-setup.md) — Dataverse tables + data
 8. [docs/07-dataverse-integration.md](docs/07-dataverse-integration.md) — replace mocks
 9. [docs/08-secure-rag.md](docs/08-secure-rag.md) — Azure AI Search
-10. [docs/09-agent-framework.md](docs/09-agent-framework.md) — SK agents + Copilot Studio
+10. [docs/09-agent-framework.md](docs/09-agent-framework.md) — Microsoft Agent Framework + Copilot Studio, with one Semantic Kernel comparison agent
 11. [docs/10-observability-polish.md](docs/10-observability-polish.md) — cost + demo
 
 **Post-MVP:** Microsoft 365 Agents SDK — custom-engine agent surface via Agents Playground, reusing the same Orchestrator API and MCP tool layer.

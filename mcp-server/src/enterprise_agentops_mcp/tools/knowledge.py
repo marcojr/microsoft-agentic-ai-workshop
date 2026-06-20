@@ -1,6 +1,6 @@
 from fastmcp import FastMCP
 
-from enterprise_agentops_mcp.config import DATA_MODE
+from enterprise_agentops_mcp.config import DATA_MODE, KNOWLEDGE_MODE
 from enterprise_agentops_mcp.services.mock_data_service import load
 
 router = FastMCP()
@@ -9,8 +9,16 @@ router = FastMCP()
 @router.tool()
 def search_knowledge_articles(query: str, max_results: int = 3) -> dict:
     """Search internal policy documents and knowledge articles."""
-    if DATA_MODE != "mock":
-        raise NotImplementedError("Azure AI Search mode not yet implemented - see Stage 8")
+    if KNOWLEDGE_MODE == "search":
+        from enterprise_agentops_mcp.services.azure_search_service import search_knowledge
+
+        return {"query": query, "results": search_knowledge(query, max_results=max_results)}
+    if KNOWLEDGE_MODE != "mock":
+        raise ValueError(f"Unsupported MCP_KNOWLEDGE_MODE: {KNOWLEDGE_MODE}")
+    if DATA_MODE != "mock" and KNOWLEDGE_MODE == "mock":
+        raise RuntimeError(
+            "Knowledge mode is mock while MCP_DATA_MODE is live. Configure MCP_KNOWLEDGE_MODE=search."
+        )
 
     articles = load("knowledge_articles.json")
     terms = [term for term in query.lower().split() if term]

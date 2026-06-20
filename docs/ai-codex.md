@@ -70,9 +70,9 @@ Use DATA_MODE=mock, no mocking of files."
 #### Generate a Pulumi resource
 
 ```bash
-codex "Write a Pulumi TypeScript resource for Azure AI Search in infrastructure/pulumi/resources/aiSearch.ts.
-Use azure-native provider, free SKU, uksouth location, import resourceGroup from ./resourceGroup,
-export searchService and searchEndpoint."
+codex "Write a Pulumi C# resource for Azure AI Search in infrastructure/pulumi/Program.cs and supporting files.
+Use Pulumi.AzureNative, free SKU, uksouth location, read names from azure-context.json,
+and export searchService and searchEndpoint."
 ```
 
 #### Seed data
@@ -103,8 +103,7 @@ OPENAI_API_KEY=sk-...
 
 | Model | ID | Usage | Input / Output (per 1M tokens) |
 |---|---|---|---|
-| GPT-4.1 Mini | `gpt-4.1-mini` | Draft Agent, Intake, Critic (provider=openai) | $0.40 / $1.60 |
-| GPT-4.1 | `gpt-4.1` | Higher quality drafting (optional) | $2.00 / $8.00 |
+| GPT-5 Mini | `gpt-5-mini` | Direct OpenAI lab path only | Check current provider pricing |
 | text-embedding-3-small | `text-embedding-3-small` | Embeddings for Azure AI Search RAG | $0.02 / — |
 
 ---
@@ -119,7 +118,7 @@ from openai import OpenAI
 client = OpenAI()
 
 response = client.chat.completions.create(
-    model="gpt-4.1-mini",
+    model="gpt-5-mini",
     max_tokens=512,
     messages=[
         {"role": "system", "content": DRAFT_PROMPT},
@@ -146,7 +145,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 def run_draft_agent_openai(context: str) -> tuple[str, int, int]:
     """Returns (text, input_tokens, output_tokens)."""
     response = client.chat.completions.create(
-        model="gpt-4.1-mini",
+        model="gpt-5-mini",
         max_tokens=512,
         messages=[
             {"role": "system", "content": DRAFT_PROMPT},
@@ -183,28 +182,16 @@ See [docs/08-secure-rag.md](08-secure-rag.md) for the full ingestion script.
 
 ---
 
-## Semantic Kernel Integration
+## Direct OpenAI Lab Path
 
-The same SK pipeline runs with OpenAI by changing the provider parameter:
-
-```python
-from semantic_kernel import Kernel
-from semantic_kernel.connectors.ai.open_ai import OpenAIChatCompletion
-
-kernel = Kernel()
-kernel.add_service(OpenAIChatCompletion(
-    ai_model_id="gpt-4.1-mini",
-    api_key=os.getenv("OPENAI_API_KEY")
-))
-```
-
-Switch from Anthropic to OpenAI:
+The active enterprise path uses Azure OpenAI. Direct OpenAI is kept for lab comparison and Codex/API experiments.
 
 ```python
-pipeline = WebshopOrderSupportPipeline(provider="openai")
+pipeline = WebshopOrderSupportPipeline(provider="azure_openai")
+secondary_pipeline = WebshopOrderSupportPipeline(provider="gemini")
 ```
 
-No other code changes required.
+Do not use direct OpenAI as the default runtime for this Microsoft case.
 
 ---
 
@@ -212,10 +199,11 @@ No other code changes required.
 
 | Scenario | Recommended Provider |
 |---|---|
-| Primary development and drafting | Anthropic (`claude-sonnet-4-6`) |
-| Fast cheap classification and evaluation | Anthropic (`claude-haiku-4-5-20251001`) |
+| Primary enterprise runtime | Azure OpenAI (`gpt-5-mini` deployment) |
+| Direct API lab path | OpenAI (`gpt-5-mini`) |
+| Secondary model path | Gemini (`gemini-3.5-flash`) |
 | OpenAI embeddings for vector search | OpenAI (`text-embedding-3-small`) |
-| Client requires Azure OpenAI only | Azure OpenAI (`gpt-4o-mini`) |
+| Client requires Azure OpenAI only | Azure OpenAI (`gpt-5-mini`) |
 | Testing provider parity | Run both and compare via Critic Agent |
 | Generating code and tests | Codex CLI (interactive) |
 | Scaffolding Pulumi resources | Codex CLI (one-shot) |
@@ -224,7 +212,7 @@ No other code changes required.
 
 ## Pricing Reference
 
-See [docs/01-project-setup.md](01-project-setup.md) for the full `pricing.json`. The `calculate_agent_run_cost` MCP tool supports both Anthropic and OpenAI vendors.
+See [docs/01-project-setup.md](01-project-setup.md) for the full `pricing.json`. The `calculate_agent_run_cost` MCP tool supports OpenAI and Gemini vendors in the active runtime path.
 
 ---
 
@@ -234,3 +222,4 @@ See [docs/01-project-setup.md](01-project-setup.md) for the full `pricing.json`.
 - Use `codex --auto` only for low-risk tasks (adding tests, generating seed data)
 - Prefix the prompt with the exact file path so Codex targets the right location
 - After Codex writes a file, run the test suite to verify: `uv run pytest tests/ -v`
+

@@ -85,9 +85,8 @@ from enterprise_agentops_mcp.tools.observability import log_agent_run
 workflows = ["WebshopOrderSupport", "CustomerCaseIntelligence"]
 intents = ["SummariseLatestOrderIssue", "CheckDeliveryStatus", "EscalateCase", "RequestRefund"]
 models = [
-    ("claude-sonnet-4-6", "Anthropic"),
-    ("claude-haiku-4-5-20251001", "Anthropic"),
-    ("gpt-4.1-mini", "OpenAI")
+    ("gpt-5-mini", "Azure OpenAI"),
+    ("gemini-3.5-flash", "Gemini")
 ]
 tools_pool = ["get_customer_by_email", "get_latest_order", "get_shipment_status",
               "get_returns_for_order", "search_knowledge_articles", "evaluate_response"]
@@ -192,11 +191,11 @@ Switch to VS Code → show `mcp-server/src/enterprise_agentops_mcp/tools/`
 
 Open `agents/pipelines/webshop_pipeline.py`
 
-> "In Stage 9 we replace the single-step orchestrator with a Semantic Kernel multi-agent pipeline. An Intake Agent classifies the request, a Data Agent fetches data via MCP tools, a Draft Agent with Claude Sonnet writes the summary, and a Critic Agent evaluates quality and groundedness before the response is returned."
+> "In Stage 9 we move the single-step orchestrator toward Microsoft Agent Framework. Intake, Data, Governance and Critic become modern framework agents. The Draft Agent intentionally stays in Semantic Kernel so we can compare the older SDK style with the newer Agent Framework direction."
 
-Switch provider: change `provider="openai"` → re-run → show same output with GPT-4.1 Mini.
+Switch provider: change `provider="azure_openai"` to `provider="gemini"` in the lab path, then re-run and compare the output.
 
-> "Provider switching is a single parameter — the architecture supports Anthropic and OpenAI without code changes."
+> "Provider switching is configuration-driven. The enterprise runtime path uses Azure OpenAI with `gpt-5-mini` as the primary provider, with Gemini available for comparison and lab use."
 
 ### Minute 4:30 — Governance and Approval (1:00)
 
@@ -212,7 +211,7 @@ Open Power BI → Operations → Cost Engineering → Governance pages.
 
 ### Minute 6:30 — Closing (30 sec)
 
-> "This architecture runs entirely on Microsoft infrastructure — Copilot Studio, Azure Functions, Dataverse, AI Foundry — with Pulumi for reproducible IaC and Anthropic Claude as the reasoning engine. Every component is observable, governed and auditable."
+> "This architecture runs on Microsoft infrastructure: Copilot Studio, Azure Functions, Dataverse and Microsoft Foundry, with Pulumi for reproducible IaC and configurable Azure OpenAI/Gemini model providers. Every component is observable, governed and auditable."
 
 ---
 
@@ -231,10 +230,10 @@ MVP path:
 ┌────────────▼────────────────────────┐
 │  Orchestrator Layer                 │
 │  [Azure Functions] (Python)         │
-│  └── [Semantic Kernel Pipeline]     │
+│  └── [Microsoft Agent Framework]    │
 │       ├── Intake Agent              │
 │       ├── Data Agent                │
-│       ├── Draft Agent (Claude)      │
+│       ├── Draft Agent (SK compare)  │
 │       └── Critic Agent              │
 └────────────┬────────────────────────┘
              │ Tool calls
@@ -257,7 +256,7 @@ MVP path:
 │  Governance + Observability         │
 │  [App Insights] [Power BI]          │
 │  [Key Vault] [Power Automate]       │
-│  [Azure AI Foundry Policy Agent]    │
+│  [Microsoft Foundry (formerly Azure AI Foundry) Policy Agent]    │
 └─────────────────────────────────────┘
 ```
 
@@ -281,10 +280,10 @@ Future custom-engine agent surface (post-MVP):
 
 1. **Governed agentic AI** — all LLM actions go through typed MCP tools; no direct database access from agents
 2. **Human-in-the-loop** — high-risk actions create approval requests in Dataverse, routed via Power Automate; agent never confirms compensation pre-approval
-3. **Provider agnosticism** — Anthropic Claude and OpenAI GPT both run the same SK pipeline; single parameter to switch
+3. **Provider agnosticism** — Azure OpenAI and Gemini are selected through configuration
 4. **Cost engineering** — every token logged, every cost calculated; Power BI shows spend by workflow, model and vendor
 5. **Observable by design** — Application Insights traces + Dataverse AgentRun table + quality/groundedness/risk scores per run
-6. **Pulumi IaC** — all Azure resources declared in TypeScript, reproducible from scratch with `pulumi up`
+6. **Pulumi IaC** — all Azure resources declared in C#, reproducible from scratch with `pulumi up`
 7. **Progressive fidelity** — same codebase runs against mock JSON (Day 2) and live Dataverse (Day 7) with a single env var
 8. **Policy RAG** — knowledge articles indexed in Azure AI Search with semantic + vector search; Foundry Policy Agent grounds governance decisions in verified documents
 
@@ -300,7 +299,7 @@ Not part of the Day 10 scope. After the MVP is complete and demonstrated, the ne
 - Microsoft 365 Agents SDK project in `apps/m365-agent/`
 - Test through Microsoft 365 Agents Playground
 - Connect to the same Azure Function Orchestrator API
-- Reuse the same Semantic Kernel orchestration and MCP tool layer
+- Reuse the same Microsoft Agent Framework orchestration and MCP tool layer
 - Optional Teams deployment if a suitable developer tenant is available
 - Screenshots and demo notes
 
@@ -311,3 +310,4 @@ This demonstrates that the architecture is not limited to Copilot Studio as the 
 ## Next Step
 
 All 10 stages complete. Return to [CLAUDE.md](../CLAUDE.md) for the full project reference.
+

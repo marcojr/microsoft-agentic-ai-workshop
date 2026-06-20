@@ -35,12 +35,29 @@ def create_approval_request(
         "approvedBy": None,
     }
 
-    if DATA_MODE != "mock":
-        raise NotImplementedError("Dataverse mode not yet implemented - see Stage 7")
+    if DATA_MODE == "dataverse":
+        from enterprise_agentops_mcp.services.dataverse_service import dv_post
 
-    approvals = load("approvals.json")
-    approvals.append(approval)
-    save("approvals.json", approvals)
+        dv_post(
+            "cr_approvalrequests",
+            {
+                "cr_approvalkey": approval_id,
+                "cr_relatedrecordid": related_record_id,
+                "cr_relatedrecordtype": related_record_type,
+                "cr_requestedby": requested_by,
+                "cr_approvaltype": approval_type,
+                "cr_status": "Pending",
+                "cr_risklevel": risk_level,
+                "cr_reason": reason,
+                "cr_approvedby": None,
+            },
+        )
+    elif DATA_MODE == "mock":
+        approvals = load("approvals.json")
+        approvals.append(approval)
+        save("approvals.json", approvals)
+    else:
+        raise ValueError(f"Unsupported MCP_DATA_MODE: {DATA_MODE}")
 
     if POWER_AUTOMATE_APPROVAL_URL:
         response = httpx.post(POWER_AUTOMATE_APPROVAL_URL, json=approval, timeout=5)

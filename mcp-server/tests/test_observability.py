@@ -5,7 +5,7 @@ def test_log_agent_run() -> None:
     result = log_agent_run(
         workflow_name="WebshopOrderSupport",
         intent="SummariseLatestOrderIssue",
-        model_used="gpt-4.1-mini",
+        model_used="gpt-5-mini",
         vendor="OpenAI",
         input_tokens=1800,
         output_tokens=450,
@@ -18,3 +18,4 @@ def test_log_agent_run() -> None:
     )
     assert result["logged"] is True
     assert result["runId"].startswith("run-")
+

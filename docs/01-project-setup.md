@@ -109,7 +109,7 @@ GET  /api/agent-runs/{runId}
   "qualityScore": 0.88,
   "groundednessScore": 0.91,
   "estimatedCost": 0.012,
-  "modelUsed": "claude-sonnet-4-6",
+  "modelUsed": "gpt-5-mini",
   "latencyMs": 3200
 }
 ```
@@ -146,8 +146,8 @@ requires-python = ">=3.12"
 dependencies = [
     "mcp[cli]>=1.0.0",
     "fastmcp>=0.1.0",
-    "anthropic>=0.40.0",
     "openai>=1.50.0",
+    "google-genai>=1.0.0",
     "azure-search-documents>=11.4.0",
     "azure-identity>=1.17.0",
     "azure-monitor-opentelemetry>=1.0.0",
@@ -186,8 +186,19 @@ load_dotenv()
 
 DATA_MODE = os.getenv("MCP_DATA_MODE", "mock")
 
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+
+AI_PRIMARY_PROVIDER = os.getenv("AI_PRIMARY_PROVIDER", "azure_openai")
+AI_PRIMARY_VENDOR = os.getenv("AI_PRIMARY_VENDOR", "Azure OpenAI")
+AI_PRIMARY_MODEL = os.getenv("AI_PRIMARY_MODEL", "gpt-5-mini")
+
+AI_SECONDARY_PROVIDER = os.getenv("AI_SECONDARY_PROVIDER", "gemini")
+AI_SECONDARY_VENDOR = os.getenv("AI_SECONDARY_VENDOR", "Gemini")
+AI_SECONDARY_MODEL = os.getenv("AI_SECONDARY_MODEL", "gemini-3.5-flash")
+
+AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT", "")
+AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY", "")
+AZURE_OPENAI_DEPLOYMENT_NAME = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-5-mini")
 
 AZURE_AI_SEARCH_ENDPOINT = os.getenv("AZURE_AI_SEARCH_ENDPOINT", "")
 AZURE_AI_SEARCH_KEY = os.getenv("AZURE_AI_SEARCH_KEY", "")
@@ -233,3 +244,4 @@ Full content for each file is defined in [docs/02-mcp-server.md](02-mcp-server.m
 ## Next Step
 
 [docs/02-mcp-server.md](02-mcp-server.md) — Day 2: MCP Server local with first tools.
+

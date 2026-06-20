@@ -1,23 +1,16 @@
 [
   {
-    "vendor": "Anthropic",
-    "model": "claude-sonnet-4-6",
-    "inputTokenPricePer1M": 3.0,
-    "outputTokenPricePer1M": 15.0,
-    "currency": "USD"
-  },
-  {
-    "vendor": "Anthropic",
-    "model": "claude-haiku-4-5-20251001",
-    "inputTokenPricePer1M": 0.8,
-    "outputTokenPricePer1M": 4.0,
-    "currency": "USD"
-  },
-  {
     "vendor": "OpenAI",
-    "model": "gpt-4.1-mini",
-    "inputTokenPricePer1M": 0.4,
-    "outputTokenPricePer1M": 1.6,
+    "model": "gpt-5-mini",
+    "inputTokenPricePer1M": 0.25,
+    "outputTokenPricePer1M": 2.0,
+    "currency": "USD"
+  },
+  {
+    "vendor": "Azure OpenAI",
+    "model": "gpt-5-mini",
+    "inputTokenPricePer1M": 0.25,
+    "outputTokenPricePer1M": 2.0,
     "currency": "USD"
   },
   {
@@ -26,5 +19,13 @@
     "inputTokenPricePer1M": 0.15,
     "outputTokenPricePer1M": 0.6,
     "currency": "USD"
+  },
+  {
+    "vendor": "Gemini",
+    "model": "gemini-3.5-flash",
+    "inputTokenPricePer1M": 0.25,
+    "outputTokenPricePer1M": 1.5,
+    "currency": "USD"
   }
 ]
+

@@ -1,0 +1,190 @@
+PC transfer handoff for the next Codex
+=====================================
+
+Read this first.
+
+Project:
+- Repository: microsoft-agentic-ai-workshop
+- Local Windows path used so far: C:\Users\conta\codebases\MS Agentic AI
+- User wants to continue on Linux for a few hours.
+- User is learning step by step and wants to "apalpar" what was built.
+- Keep answers short and direct.
+- If a request looks totally out of scope, ask if the user mixed browser/IDE windows.
+
+Hard rules from the user:
+- Do not hide failures behind fallbacks. If something breaks, let the exception show.
+- Do not over-engineer backward compatibility.
+- Agent/orchestration code must have short step-by-step comments in English.
+- Always update progress.md after meaningful decisions, implementation, verification, or blockers.
+- Do not print secrets.
+
+Current architecture direction:
+- This is a Microsoft Agentic AI case.
+- Azure OpenAI is the primary enterprise LLM path.
+- Active Azure OpenAI deployment: gpt-5-mini.
+- Gemini is the secondary comparison/lab provider.
+- Anthropic/Claude is not in the active runtime path. It remains only as legacy/reference documentation.
+- Product naming in docs should use Microsoft Foundry (formerly Azure AI Foundry).
+- Microsoft Agent Framework is the modern pro-code direction.
+- Exactly one agent remains on Semantic Kernel: DraftAgent. This is intentional for comparison, didactics, and legacy understanding.
+
+Important implemented pieces:
+- MCP server in mcp-server/
+  - FastMCP server.
+  - Tools for customers, orders, shipments, returns, refunds, approvals, knowledge, cost, observability, etc.
+  - Mock mode and live Dataverse/Search paths.
+- Orchestrator API in apps/orchestrator-api/
+  - Azure Functions Python project.
+  - Webshop order support flow.
+  - Flow calls MCP tools, Dataverse, Azure AI Search, Service Bus, Azure OpenAI.
+  - Current summary generation delegates to apps/orchestrator-api/src/agents/draft_agent.py.
+- DraftAgent:
+  - File: apps/orchestrator-api/src/agents/draft_agent.py
+  - Uses Semantic Kernel.
+  - Uses AzureChatCompletion against Azure OpenAI gpt-5-mini.
+  - Has English step-by-step comments.
+- Azure infrastructure:
+  - Pulumi C# in infrastructure/pulumi/
+  - Uses infrastructure/config/azure-context.json locally, but this real file is ignored.
+  - Azure resources have been deployed in rg-agentops-dev-002 in East US.
+  - Includes Function App, Storage, App Insights, Key Vault, Azure AI Search, Service Bus, Azure OpenAI.
+- Dataverse:
+  - Real Dataverse environment is used.
+  - Runtime auth currently uses PAC-created Service Principal because that is the identity that works with the current Dataverse environment.
+  - There are Power Platform scripts under power-platform/scripts/.
+- Azure AI Search:
+  - Search service: srch-agentops-dev-002.
+  - Index: enterprise-knowledge.
+  - 10 sample documents were ingested.
+- Service Bus:
+  - Namespace: sbns-agentops-dev-002.
+  - Queues:
+    - approval-requests
+    - agent-run-events
+    - workflow-deadletter
+
+Files the next Codex should read first:
+- progress.md
+- CLAUDE.md
+- context.MD
+- docs/09-agent-framework.md
+- docs/agents.md
+- docs/07-dataverse-integration.md
+- docs/08-secure-rag.md
+- docs/05-pulumi-infrastructure.md
+- apps/orchestrator-api/src/agents/draft_agent.py
+- apps/orchestrator-api/src/shared/azure_openai_client.py
+- apps/orchestrator-api/src/webshop_order_support.py
+- mcp-server/src/enterprise_agentops_mcp/config.py
+
+Linux setup notes:
+- The repo should run on Linux.
+- Do not rely on Windows paths or PowerShell-only commands unless specifically working on Windows.
+- The local .env is ignored and will not arrive through git.
+- The local infrastructure/config/azure-context.json is ignored and will not arrive through git.
+- Recreate local secrets/config on Linux from safe sources, not from the repo.
+
+Secrets/config needed on Linux:
+- mcp-server/.env must exist.
+- Required for live mode:
+  - MCP_DATA_MODE=dataverse
+  - MCP_KNOWLEDGE_MODE=search
+  - DATAVERSE_URL
+  - DATAVERSE_SP_CLIENT_ID
+  - DATAVERSE_SP_CLIENT_SECRET
+  - DATAVERSE_SP_TENANT_ID
+  - AZURE_AI_SEARCH_ENDPOINT
+  - AZURE_AI_SEARCH_KEY
+  - AZURE_AI_SEARCH_INDEX=enterprise-knowledge
+  - AZURE_SERVICE_BUS_CONNECTION_STRING
+  - SERVICE_BUS_APPROVAL_REQUESTS_QUEUE=approval-requests
+  - SERVICE_BUS_AGENT_RUN_EVENTS_QUEUE=agent-run-events
+  - SERVICE_BUS_WORKFLOW_DEADLETTER_QUEUE=workflow-deadletter
+  - AZURE_OPENAI_ENDPOINT
+  - AZURE_OPENAI_API_KEY
+  - AZURE_OPENAI_DEPLOYMENT_NAME=gpt-5-mini
+  - AI_PRIMARY_PROVIDER=azure_openai
+  - AI_PRIMARY_VENDOR=Azure OpenAI
+  - AI_PRIMARY_MODEL=gpt-5-mini
+  - AI_SECONDARY_PROVIDER=gemini
+  - AI_SECONDARY_VENDOR=Gemini
+  - AI_SECONDARY_MODEL=gemini-3.5-flash
+  - GEMINI_API_KEY, only needed when testing Gemini comparison
+
+Suggested Linux commands after git pull:
+
+1. MCP server dependencies:
+   cd mcp-server
+   uv sync --extra dev
+   uv run pytest tests -q
+
+2. Orchestrator dependencies:
+   cd ../apps/orchestrator-api
+   uv venv
+   uv pip install -r requirements.txt
+   .venv/bin/python -m pytest tests -q
+
+3. Smoke test DraftAgent only:
+   cd ../..
+   cd apps/orchestrator-api
+   PYTHONPATH="../../mcp-server/src:." .venv/bin/python - <<'PY'
+   import asyncio
+   from src.agents.draft_agent import DraftAgent
+
+   async def main():
+       agent = DraftAgent()
+       result = await agent.generate_summary(
+           customer={"fullName": "John Smith", "email": "john.smith@contoso.com"},
+           order={"orderNumber": "WEB-1001", "deliveryStatus": "Delayed", "status": "Shipped"},
+           shipment={"shipmentId": "ship-9001", "status": "Delayed"},
+           refunds=[{"refundId": "ref-4001", "status": "Pending Approval"}],
+           returns=[],
+           knowledge=[{"title": "Delivery Delay Policy", "summary": "Approval is required before compensation is communicated."}],
+           risk="High",
+       )
+       print(result["model"])
+       print(result["summary"])
+
+   asyncio.run(main())
+   PY
+
+4. Full local orchestration smoke test:
+   cd apps/orchestrator-api
+   PYTHONPATH="../../mcp-server/src:." .venv/bin/python - <<'PY'
+   from src.webshop_order_support import handle_webshop_order_support
+   import json
+
+   result, status = handle_webshop_order_support({
+       "customerEmail": "john.smith@contoso.com",
+       "userId": "user-001"
+   })
+   print(status)
+   print(json.dumps(result, indent=2))
+   PY
+
+Known good verification from Windows:
+- MCP tests: 33 passed.
+- Orchestrator tests: 2 passed.
+- Real DraftAgent smoke test worked with model gpt-5-mini-2025-08-07.
+- Full real orchestration worked for john.smith@contoso.com.
+- Real Service Bus messages were visible in agent-run-events and approval-requests.
+
+What was just changed before transfer:
+- Docs aligned to Microsoft Foundry (formerly Azure AI Foundry).
+- Docs aligned to Microsoft Agent Framework as modern direction.
+- Docs say only DraftAgent remains on Semantic Kernel for comparison/didactic/legacy reasons.
+- Active model references aligned to Azure OpenAI gpt-5-mini.
+- Agent instruction docs now require short step-by-step English comments.
+- draft_agent.py has English step-by-step comments.
+
+Recommended next step:
+- Continue Stage 9.
+- Dissect draft_agent.py with the user line by line.
+- Then implement the next agent using Microsoft Agent Framework, probably Intake Agent, and compare its structure against the Semantic Kernel DraftAgent.
+- Keep every major code path commented step by step in English.
+- After each meaningful step, update progress.md.
+
+Suggested prompt the user can give the next Codex:
+
+"Leia pc-transfer.txt, progress.md, CLAUDE.md, context.MD e docs/09-agent-framework.md. Depois me ajude a continuar exatamente de onde parei. Quero entender o draft_agent.py passo a passo e depois criar o próximo agente usando Microsoft Agent Framework, mantendo comentários em inglês e atualizando progress.md."
+

@@ -1,11 +1,17 @@
 import time
 
+from src.shared.azure_openai_client import generate_order_support_summary
 from src.shared.mcp_client import MCPClient
 
 
 def handle_webshop_order_support(body: dict) -> tuple[dict, int]:
     start = time.time()
     client = MCPClient()
+    from enterprise_agentops_mcp.services.service_bus_service import (
+        send_agent_run_event,
+        send_approval_request_event,
+    )
+    from enterprise_agentops_mcp import config
 
     customer_email = body.get("customerEmail")
     if not customer_email:
@@ -33,14 +39,16 @@ def handle_webshop_order_support(body: dict) -> tuple[dict, int]:
     has_refund = any(item.get("requiresApproval") for item in refund_rows)
     risk = "High" if has_delay and has_refund else "Medium"
 
-    summary = (
-        f"{customer['fullName']}'s latest order is {order['orderNumber']}. "
-        f"Delivery status: {order['deliveryStatus']}."
+    ai_summary = generate_order_support_summary(
+        customer=customer,
+        order=order,
+        shipment=shipment,
+        refunds=refund_rows,
+        returns=returns.get("returns", []),
+        knowledge=knowledge.get("results", []),
+        risk=risk,
     )
-    if has_delay:
-        summary += f" Shipment delayed: {shipment.get('delayReason', 'unknown reason')}."
-    if has_refund:
-        summary += " A refund request is pending approval."
+    summary = ai_summary["summary"]
 
     evaluation = client.call(
         "evaluate_response",
@@ -65,18 +73,31 @@ def handle_webshop_order_support(body: dict) -> tuple[dict, int]:
             },
         )
         approval_id = approval.get("approvalId")
+        send_approval_request_event(
+            {
+                "approvalId": approval_id,
+                "relatedRecordId": order["orderId"],
+                "relatedRecordType": "order",
+                "approvalType": "Compensation",
+                "riskLevel": "High",
+                "customerEmail": customer_email,
+                "customerName": customer["fullName"],
+                "orderNumber": order["orderNumber"],
+                "reason": "Delayed shipment with pending refund",
+            }
+        )
 
     latency_ms = int((time.time() - start) * 1000)
-    model_used = "claude-sonnet-4-6"
-    vendor = "Anthropic"
+    model_used = config.AI_PRIMARY_MODEL
+    vendor = config.AI_PRIMARY_VENDOR
 
     cost = client.call(
         "calculate_agent_run_cost",
         {
             "vendor": vendor,
             "model": model_used,
-            "input_tokens": 1500,
-            "output_tokens": 400,
+            "input_tokens": ai_summary["inputTokens"],
+            "output_tokens": ai_summary["outputTokens"],
         },
     )
     log = client.call(
@@ -86,8 +107,8 @@ def handle_webshop_order_support(body: dict) -> tuple[dict, int]:
             "intent": "SummariseLatestOrderIssue",
             "model_used": model_used,
             "vendor": vendor,
-            "input_tokens": 1500,
-            "output_tokens": 400,
+            "input_tokens": ai_summary["inputTokens"],
+            "output_tokens": ai_summary["outputTokens"],
             "latency_ms": latency_ms,
             "tools_called": [
                 "get_customer_by_email",
@@ -105,6 +126,24 @@ def handle_webshop_order_support(body: dict) -> tuple[dict, int]:
             "quality_score": evaluation.get("qualityScore", 0.0),
             "groundedness_score": evaluation.get("groundednessScore", 0.0),
         },
+    )
+    send_agent_run_event(
+        {
+            "runId": log.get("runId"),
+            "workflowName": "WebshopOrderSupport",
+            "intent": "SummariseLatestOrderIssue",
+            "customerEmail": customer_email,
+            "customerName": customer["fullName"],
+            "orderNumber": order["orderNumber"],
+            "requiresApproval": approval_id is not None,
+            "approvalId": approval_id,
+            "riskScore": evaluation.get("riskScore", 0.0),
+            "qualityScore": evaluation.get("qualityScore", 0.0),
+            "groundednessScore": evaluation.get("groundednessScore", 0.0),
+            "estimatedCost": cost.get("estimatedCost"),
+            "modelUsed": model_used,
+            "latencyMs": latency_ms,
+        }
     )
 
     return {

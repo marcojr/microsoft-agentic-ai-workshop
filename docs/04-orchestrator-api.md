@@ -36,8 +36,16 @@ func new --name agent_runs --template "HTTP trigger" --authlevel "anonymous"
   "Values": {
     "FUNCTIONS_WORKER_RUNTIME": "python",
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "ANTHROPIC_API_KEY": "",
-    "OPENAI_API_KEY": "",
+    "GEMINI_API_KEY": "",
+    "AI_PRIMARY_PROVIDER": "azure_openai",
+    "AI_PRIMARY_VENDOR": "Azure OpenAI",
+    "AI_PRIMARY_MODEL": "gpt-5-mini",
+    "AZURE_OPENAI_ENDPOINT": "",
+    "AZURE_OPENAI_API_KEY": "",
+    "AZURE_OPENAI_DEPLOYMENT_NAME": "gpt-5-mini",
+    "AI_SECONDARY_PROVIDER": "gemini",
+    "AI_SECONDARY_VENDOR": "Gemini",
+    "AI_SECONDARY_MODEL": "gemini-3.5-flash",
     "MCP_DATA_MODE": "mock",
     "POWER_AUTOMATE_APPROVAL_URL": ""
   }
@@ -176,7 +184,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     # Step 8: Cost + log
     latency_ms = int((time.time() - start) * 1000)
-    model, vendor = "claude-sonnet-4-6", "Anthropic"
+    model, vendor = config.AI_PRIMARY_MODEL, config.AI_PRIMARY_VENDOR
 
     cost = client.call("calculate_agent_run_cost", {
         "vendor": vendor, "model": model,
@@ -236,39 +244,30 @@ curl -X POST http://localhost:7071/api/webshop-order-support \
 
 ---
 
-## Adding Claude for the Summary
+## LLM Summary Generation
 
-Replace the manual string building in Step 5 with a Claude call:
+The orchestrator now generates the support summary with Azure OpenAI.
 
-```python
-import anthropic
+Current project standard:
 
-ac = anthropic.Anthropic()
-msg = ac.messages.create(
-    model="claude-sonnet-4-6",
-    max_tokens=512,
-    system="You are an enterprise customer support agent. Write professional summaries based only on provided data. Never promise compensation before it has been approved.",
-    messages=[{"role": "user", "content": f"""
-Customer: {json.dumps(customer)}
-Order: {json.dumps(order)}
-Items: {json.dumps(order_items)}
-Shipment: {json.dumps(shipment)}
-Returns: {json.dumps(returns)}
-Refunds: {json.dumps(refunds)}
-Policy: {json.dumps(knowledge)}
+- primary enterprise provider: Azure OpenAI
+- secondary provider: Gemini
+- direct OpenAI is not active in this case
+- Anthropic is not part of the active runtime path
 
-Write a concise professional summary (3-5 sentences). State if approval is required.
-"""}]
-)
-summary = msg.content[0].text
-input_tokens = msg.usage.input_tokens
-output_tokens = msg.usage.output_tokens
-```
+Implementation:
 
-See [docs/ai-anthropic.md](ai-anthropic.md) for the full guide.
+- `apps/orchestrator-api/src/shared/azure_openai_client.py`
+- deployment: `gpt-5-mini`
+- API parameter: `max_completion_tokens`
+- GPT-5 behavior: reasoning tokens count against the same completion token limit
+- current request config: `reasoning_effort=low`
+
+Gemini uses `GEMINI_API_KEY`; see the official key setup guide: https://ai.google.dev/gemini-api/docs/api-key
 
 ---
 
 ## Next Step
 
 [docs/05-pulumi-infrastructure.md](05-pulumi-infrastructure.md) — Day 5: Pulumi + Azure resources.
+

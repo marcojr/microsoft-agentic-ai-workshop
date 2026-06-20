@@ -1,0 +1,3 @@
+name: enterprise-agentops
+runtime: dotnet
+description: Enterprise AgentOps Control Tower - Azure infrastructure in Pulumi C#

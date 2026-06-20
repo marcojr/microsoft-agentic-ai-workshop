@@ -176,22 +176,8 @@ Build the local MCP Server with mock JSON data and implement the first tools for
 ```json
 [
   {
-    "vendor": "Anthropic",
-    "model": "claude-sonnet-4-6",
-    "inputTokenPricePer1M": 3.00,
-    "outputTokenPricePer1M": 15.00,
-    "currency": "USD"
-  },
-  {
-    "vendor": "Anthropic",
-    "model": "claude-haiku-4-5-20251001",
-    "inputTokenPricePer1M": 0.80,
-    "outputTokenPricePer1M": 4.00,
-    "currency": "USD"
-  },
-  {
     "vendor": "OpenAI",
-    "model": "gpt-4.1-mini",
+    "model": "gpt-5-mini",
     "inputTokenPricePer1M": 0.40,
     "outputTokenPricePer1M": 1.60,
     "currency": "USD"
@@ -201,6 +187,13 @@ Build the local MCP Server with mock JSON data and implement the first tools for
     "model": "gpt-4o-mini",
     "inputTokenPricePer1M": 0.15,
     "outputTokenPricePer1M": 0.60,
+    "currency": "USD"
+  },
+  {
+    "vendor": "Gemini",
+    "model": "gemini-3.5-flash",
+    "inputTokenPricePer1M": 0.25,
+    "outputTokenPricePer1M": 1.50,
     "currency": "USD"
   }
 ]
@@ -399,3 +392,4 @@ Add to `~/.cursor/mcp.json` (or Settings > MCP):
 ## Next Step
 
 [docs/03-mcp-tools-extended.md](03-mcp-tools-extended.md) — Day 3: remaining tools (returns, refunds, cases, knowledge, approvals, cost, logging, evaluation).
+

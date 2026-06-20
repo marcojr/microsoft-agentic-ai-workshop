@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+import json
 
 from fastmcp import FastMCP
 
@@ -26,9 +27,6 @@ def log_agent_run(
     groundedness_score: float = 0.0,
 ) -> dict:
     """Log agent execution telemetry for observability and cost tracking."""
-    if DATA_MODE != "mock":
-        raise NotImplementedError("Dataverse mode not yet implemented - see Stage 7")
-
     cost_result = calculate_agent_run_cost(vendor, model_used, input_tokens, output_tokens)
     if "error" in cost_result:
         raise ValueError(cost_result["error"])
@@ -53,9 +51,36 @@ def log_agent_run(
         "groundednessScore": groundedness_score,
     }
 
-    runs = load("agent_runs.json")
-    runs.append(run)
-    save("agent_runs.json", runs)
+    if DATA_MODE == "dataverse":
+        from enterprise_agentops_mcp.services.dataverse_service import dv_post
+
+        dv_post(
+            "cr_agentruns",
+            {
+                "cr_runkey": run["runId"],
+                "cr_workflowname": workflow_name,
+                "cr_intent": intent,
+                "cr_modelused": model_used,
+                "cr_vendorused": vendor,
+                "cr_startedat": run["startedAt"],
+                "cr_status": run["status"],
+                "cr_inputtokens": input_tokens,
+                "cr_outputtokens": output_tokens,
+                "cr_estimatedcost": cost_result["estimatedCost"],
+                "cr_latencyms": latency_ms,
+                "cr_toolscalled": json.dumps(tools_called),
+                "cr_requiresapproval": requires_approval,
+                "cr_riskscore": risk_score,
+                "cr_qualityscore": quality_score,
+                "cr_groundednessscore": groundedness_score,
+            },
+        )
+    elif DATA_MODE == "mock":
+        runs = load("agent_runs.json")
+        runs.append(run)
+        save("agent_runs.json", runs)
+    else:
+        raise ValueError(f"Unsupported MCP_DATA_MODE: {DATA_MODE}")
 
     return {
         "logged": True,

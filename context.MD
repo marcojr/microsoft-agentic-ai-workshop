@@ -9,8 +9,9 @@ The project shows how enterprise AI agents can be built, orchestrated, governed,
 The system is not a generic chatbot. It is an enterprise-grade agentic workflow platform demonstrating:
 
 * Copilot Studio as the business-facing agent interface
-* Microsoft Foundry / Azure AI Foundry for managed AI agent capabilities
-* Microsoft Agent Framework / Semantic Kernel for code-first orchestration
+* Microsoft Foundry (formerly Azure AI Foundry) for managed AI agent capabilities
+* Microsoft Agent Framework (successor to Semantic Kernel + AutoGen) for code-first orchestration
+* one Semantic Kernel Draft Agent kept intentionally for comparison, didactics and legacy understanding
 * Microsoft 365 Agents SDK as the final-phase custom-engine agent surface
 * A custom MCP Server as the governed enterprise tool layer
 * Dataverse as the business data layer
@@ -120,7 +121,7 @@ Copilot Studio Action / Power Automate / REST Action
   ↓
 Azure Function Orchestrator API
   ↓
-Microsoft Agent Framework / Semantic Kernel
+Microsoft Agent Framework (successor to Semantic Kernel + AutoGen)
   ↓
 MCP Client
   ↓
@@ -183,7 +184,7 @@ It must:
 * validate requests
 * authenticate callers
 * route requests to the correct workflow
-* call Microsoft Agent Framework / Semantic Kernel orchestration
+* call Microsoft Agent Framework (successor to Semantic Kernel + AutoGen) orchestration
 * call MCP tools through the MCP client
 * trigger Power Automate or Logic Apps when required
 * log execution metadata
@@ -201,11 +202,15 @@ GET  /api/agent-runs/{runId}
 
 ---
 
-## 3. Microsoft Agent Framework / Semantic Kernel
+## 3. Microsoft Agent Framework (successor to Semantic Kernel + AutoGen)
 
-Microsoft Agent Framework / Semantic Kernel is the pro-code orchestration layer.
+Microsoft Agent Framework (successor to Semantic Kernel + AutoGen) is the pro-code orchestration layer.
 
 It is responsible for coordinating specialised agents and deciding which tools must be called.
+
+Semantic Kernel is not the strategic direction for the whole project. It remains in exactly one place: the Draft Agent. That agent is kept as a practical comparison track so the project can explain the evolution from Semantic Kernel to Microsoft Agent Framework.
+
+All agent and orchestration code should include short step-by-step comments in English. The goal is educational clarity: explain the major execution steps and why they exist, without adding comments that simply repeat obvious syntax.
 
 Specialised agents:
 
@@ -214,7 +219,7 @@ Intake Agent
 Data Agent
 Knowledge Agent
 Governance Agent
-Draft Agent
+Draft Agent (Semantic Kernel comparison track)
 Critic / Evaluator Agent
 Cost Agent
 Workflow Agent
@@ -439,9 +444,9 @@ maps/geocoding-mcp-server:
 
 ---
 
-## 6. Microsoft Foundry / Azure AI Foundry
+## 6. Microsoft Foundry (formerly Azure AI Foundry)
 
-Microsoft Foundry / Azure AI Foundry is used to demonstrate managed AI agent capability.
+Microsoft Foundry (formerly Azure AI Foundry) is used to demonstrate managed AI agent capability.
 
 A dedicated managed agent should be created for policy and governance.
 
@@ -475,7 +480,7 @@ It allows the same backend capabilities to be reused by a custom-engine Microsof
 * run in Microsoft 365 Agents Playground during development
 * optionally run in Microsoft Teams when a suitable developer tenant is available
 * call the same Azure Function Orchestrator API
-* use the same Microsoft Agent Framework / Semantic Kernel orchestration
+* use the same Microsoft Agent Framework (successor to Semantic Kernel + AutoGen) orchestration
 * consume the same Enterprise AgentOps MCP Server tools
 * support the same Dataverse, Secure RAG, approval, observability and cost-tracking workflows
 
@@ -486,7 +491,7 @@ Microsoft 365 Agents SDK Agent
   ↓
 Azure Function Orchestrator API
   ↓
-Microsoft Agent Framework / Semantic Kernel
+Microsoft Agent Framework (successor to Semantic Kernel + AutoGen)
   ↓
 MCP Client
   ↓
@@ -1190,7 +1195,7 @@ Input:
 ```json
 {
   "vendor": "OpenAI",
-  "model": "gpt-4.1-mini",
+  "model": "gpt-5-mini",
   "inputTokens": 1800,
   "outputTokens": 450
 }
@@ -1201,7 +1206,7 @@ Output:
 ```json
 {
   "vendor": "OpenAI",
-  "model": "gpt-4.1-mini",
+  "model": "gpt-5-mini",
   "inputTokens": 1800,
   "outputTokens": 450,
   "estimatedCost": 0.012,
@@ -1221,7 +1226,7 @@ Input:
 {
   "workflowName": "WebshopOrderSupport",
   "intent": "SummariseLatestOrderIssue",
-  "modelUsed": "gpt-4.1-mini",
+  "modelUsed": "gpt-5-mini",
   "vendor": "OpenAI",
   "inputTokens": 1800,
   "outputTokens": 450,
@@ -1489,6 +1494,14 @@ prevent agents from bypassing MCP tool boundaries
 
 Pulumi is used for Azure infrastructure.
 
+Azure naming for this project follows Microsoft Cloud Adoption Framework guidance plus Azure resource-specific naming rules. The working source set is:
+
+- https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-naming
+- https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/ready/azure-best-practices/resource-abbreviations
+- https://learn.microsoft.com/en-us/azure/azure-resource-manager/management/resource-name-rules
+
+The Azure study environment is ephemeral by design. The workload resource group can be deleted as a whole, but recovery dumps and reseed artifacts must live in persistent blob storage outside that disposable resource group. Resource names therefore include a sequence number and that sequence advances after decommissioning.
+
 Initial Pulumi scope:
 
 ```text
@@ -1509,16 +1522,11 @@ infrastructure/
   pulumi/
     Pulumi.yaml
     Pulumi.dev.yaml
-    index.ts
-    config.ts
+    EnterpriseAgentOps.Infrastructure.csproj
+    Program.cs
+    AzureContext.cs
+    AzureContextLoader.cs
     resources/
-      resourceGroup.ts
-      storage.ts
-      functionApp.ts
-      appInsights.ts
-      keyVault.ts
-      aiSearch.ts
-      serviceBus.ts
 ```
 
 ---
@@ -1751,6 +1759,11 @@ Deliverables:
 
 ```text
 Pulumi project
+Azure context JSON bootstrap
+Microsoft CAF-aligned naming
+Sequence-managed disposable resource names
+One-line teardown script
+Persistent recovery blob design
 Resource Group
 Storage Account
 Function App
@@ -1793,17 +1806,17 @@ search_knowledge_articles backed by Azure AI Search
 citations and confidence scores
 ```
 
-## Day 9: Agent Framework / Semantic Kernel + Copilot Studio
+## Day 9: Microsoft Agent Framework + Copilot Studio
 
 Deliverables:
 
 ```text
-Intake Agent
+Intake Agent using Microsoft Agent Framework
 Data Agent
 Knowledge Agent
-Governance Agent
-Draft Agent
-Critic Agent
+Governance Agent using Microsoft Agent Framework
+Draft Agent using Semantic Kernel for comparison
+Critic Agent using Microsoft Agent Framework
 Cost Agent
 Copilot Studio test agent
 Copilot Studio action calling Orchestrator API
@@ -1837,7 +1850,8 @@ Deliverables:
 Microsoft 365 Agents SDK project
 Microsoft 365 Agents Playground test
 custom-engine agent connected to Orchestrator API
-reuse of Agent Framework / Semantic Kernel orchestration
+reuse of Microsoft Agent Framework orchestration
+reuse of the single Semantic Kernel Draft Agent only as comparison track
 reuse of Enterprise AgentOps MCP Server tools
 optional Teams deployment if tenant/sideloading is available
 screenshots and demo notes
@@ -1897,7 +1911,7 @@ Estimated agent run cost: $0.012
 
 This project is a Microsoft Agentic AI reference architecture.
 
-It combines Copilot Studio for the business-facing test chat agent, Microsoft Foundry / Azure AI Foundry for managed agent capability, Microsoft Agent Framework / Semantic Kernel for code-first orchestration, a custom MCP Server for governed enterprise tools, Dataverse for business data, Azure AI Search for Secure RAG, Power Automate and Logic Apps for workflow automation, Pulumi for Azure infrastructure, and Application Insights / Power BI for observability and AI cost engineering.
+It combines Copilot Studio for the business-facing test chat agent, Microsoft Foundry (formerly Azure AI Foundry) for managed agent capability, Microsoft Agent Framework (successor to Semantic Kernel + AutoGen) for code-first orchestration, a custom MCP Server for governed enterprise tools, Dataverse for business data, Azure AI Search for Secure RAG, Power Automate and Logic Apps for workflow automation, Pulumi for Azure infrastructure, and Application Insights / Power BI for observability and AI cost engineering.
 
 The architecture also includes Microsoft 365 Agents SDK as a final-phase custom-engine agent surface, allowing the same Orchestrator API and MCP-based tool layer to be reused beyond Copilot Studio.
 
@@ -1907,7 +1921,7 @@ The purpose is to show how enterprise AI agents can move beyond chatbot demos an
 
 ## CV Bullet
 
-Built an Enterprise AgentOps Control Tower reference architecture demonstrating end-to-end Microsoft Agentic AI across Copilot Studio, Microsoft Foundry / Azure AI Foundry, Foundry Agent Service, Microsoft Agent Framework / Semantic Kernel, MCP Server, Secure RAG, Azure AI Search, Dataverse, Power Platform, Power Automate, Logic Apps, Azure Functions, Pulumi, observability and AI cost engineering. The solution orchestrates multiple agents, enterprise data, workflow approvals, governance checks, audit trails, token/cost tracking, MCP tools and operational dashboards into a single controlled agentic workflow.
+Built an Enterprise AgentOps Control Tower reference architecture demonstrating end-to-end Microsoft Agentic AI across Copilot Studio, Microsoft Foundry (formerly Azure AI Foundry), Foundry Agent Service, Microsoft Agent Framework (successor to Semantic Kernel + AutoGen), MCP Server, Secure RAG, Azure AI Search, Dataverse, Power Platform, Power Automate, Logic Apps, Azure Functions, Pulumi, observability and AI cost engineering. The solution orchestrates multiple agents, enterprise data, workflow approvals, governance checks, audit trails, token/cost tracking, MCP tools and operational dashboards into a single controlled agentic workflow.
 
 ---
 
@@ -1917,9 +1931,11 @@ Copilot Studio test chat is the business-facing agent layer for MVP.
 
 Microsoft 365 Agents SDK is the final-phase custom-engine agent surface, initially tested through Microsoft 365 Agents Playground and optionally deployable to Teams when a suitable tenant is available.
 
-Microsoft Foundry / Azure AI Foundry is the managed AI agent platform.
+Microsoft Foundry (formerly Azure AI Foundry) is the managed AI agent platform.
 
-Microsoft Agent Framework / Semantic Kernel is the pro-code orchestration layer.
+Microsoft Agent Framework (successor to Semantic Kernel + AutoGen) is the pro-code orchestration layer.
+
+Semantic Kernel remains only as the Draft Agent comparison implementation.
 
 The Enterprise AgentOps MCP Server is the governed enterprise tool layer.
 

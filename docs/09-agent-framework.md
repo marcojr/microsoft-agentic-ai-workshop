@@ -1,19 +1,31 @@
-# Stage 9: Agent Framework + Copilot Studio (Day 9)
+# Stage 9: Microsoft Agent Framework + Copilot Studio (Day 9)
 
-Replace the manual orchestration in the API with a Semantic Kernel multi-agent pipeline. Create the Copilot Studio agent and connect it to the Orchestrator API.
+Move the manual orchestration toward Microsoft Agent Framework, the modern Microsoft pro-code agent framework.
+
+Semantic Kernel stays in the project on purpose for exactly one agent: the Draft Agent. This gives us a practical comparison point, shows the evolution path, and keeps legacy understanding visible without making the whole project depend on the older style.
+
+Reference names:
+- Microsoft Agent Framework: current strategic framework, successor to Semantic Kernel + AutoGen.
+- Semantic Kernel: still a valid SDK/package, used here only by the Draft Agent comparison track.
+- Microsoft Foundry (formerly Azure AI Foundry): managed agent and model platform.
+
+Official docs:
+- Microsoft Agent Framework overview: https://learn.microsoft.com/en-us/agent-framework/overview/
+- Migration from Semantic Kernel: https://learn.microsoft.com/en-us/agent-framework/migration-guide/from-semantic-kernel/
+- Microsoft Foundry overview: https://learn.microsoft.com/en-us/azure/foundry/what-is-foundry
 
 ---
 
 ## Day 9 Deliverables
 
-- [ ] Semantic Kernel installed and configured
-- [ ] MCP tools registered as SK plugin
-- [ ] Intake Agent classifying requests
+- [x] Semantic Kernel installed and configured for the Draft Agent comparison track
+- [ ] MCP tools registered for Microsoft Agent Framework
+- [ ] Intake Agent classifying requests with Microsoft Agent Framework
 - [ ] Data Agent retrieving data via MCP tools
 - [ ] Knowledge Agent using Secure RAG
-- [ ] Governance Agent checking approval requirements
-- [ ] Draft Agent generating summaries with Claude or GPT
-- [ ] Critic Agent evaluating the draft
+- [ ] Governance Agent checking approval requirements with Microsoft Agent Framework
+- [x] Draft Agent generating summaries with Azure OpenAI through Semantic Kernel
+- [ ] Critic Agent evaluating the draft with Microsoft Agent Framework
 - [ ] Full WebshopOrderSupport pipeline running end-to-end
 - [ ] Copilot Studio agent created in test chat
 - [ ] Copilot Studio HTTP action calling Orchestrator API
@@ -21,49 +33,74 @@ Replace the manual orchestration in the API with a Semantic Kernel multi-agent p
 
 ---
 
-## Install Semantic Kernel
+## Install Agent SDKs
 
-```bash
-cd mcp-server
-uv add "semantic-kernel[anthropic,azure]"
+Semantic Kernel is installed because the Draft Agent intentionally uses it for comparison.
+
+```powershell
+cd apps/orchestrator-api
+uv pip install --python .\.venv\Scripts\python.exe -r requirements.txt
 ```
 
 ---
 
-## Kernel Setup
+## Semantic Kernel Comparison Agent
 
-**File:** `agents/kernel_setup.py`
+**Current file:** `apps/orchestrator-api/src/agents/draft_agent.py`
 
 ```python
-import os
 from semantic_kernel import Kernel
-from semantic_kernel.connectors.ai.anthropic import AnthropicChatCompletion
-from semantic_kernel.connectors.ai.open_ai import OpenAIChatCompletion, AzureChatCompletion
+from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion, AzureChatPromptExecutionSettings
 
-def build_kernel(provider: str = "anthropic") -> Kernel:
+def build_draft_kernel() -> Kernel:
     kernel = Kernel()
-    if provider == "anthropic":
-        kernel.add_service(AnthropicChatCompletion(
-            ai_model_id="claude-sonnet-4-6",
-            api_key=os.getenv("ANTHROPIC_API_KEY")
-        ))
-    elif provider == "openai":
-        kernel.add_service(OpenAIChatCompletion(
-            ai_model_id="gpt-4.1-mini",
-            api_key=os.getenv("OPENAI_API_KEY")
-        ))
-    elif provider == "azure":
-        kernel.add_service(AzureChatCompletion(
-            deployment_name="gpt-4o-mini",
-            endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-            api_key=os.getenv("AZURE_OPENAI_API_KEY")
-        ))
+    kernel.add_service(AzureChatCompletion(
+        service_id="azure-openai",
+        deployment_name="gpt-5-mini",
+        endpoint="AZURE_OPENAI_ENDPOINT",
+        api_key="AZURE_OPENAI_API_KEY",
+        api_version="2024-10-21",
+    ))
     return kernel
 ```
 
+Current GPT-5 execution settings:
+
+```python
+AzureChatPromptExecutionSettings(
+    service_id="azure-openai",
+    max_completion_tokens=1600,
+    reasoning_effort="low",
+)
+```
+
+Important: GPT-5 uses `max_completion_tokens`; `max_tokens` is rejected.
+
 ---
 
-## MCP Plugin for Semantic Kernel
+## Microsoft Agent Framework Direction
+
+The remaining agents should be implemented with Microsoft Agent Framework:
+
+- Intake Agent: classify the request and extract intent.
+- Data Agent: call MCP tools deterministically.
+- Knowledge Agent: call Azure AI Search through the MCP tool layer.
+- Governance Agent: decide whether approval is required.
+- Critic Agent: evaluate quality, groundedness and policy risk.
+- Workflow Agent: log the run and publish approval/event messages.
+
+The important comparison:
+
+| Area | Draft Agent | New Agents |
+|---|---|---|
+| Framework | Semantic Kernel | Microsoft Agent Framework |
+| Purpose | Legacy/comparison/didactic | Modern project direction |
+| Model | Azure OpenAI `gpt-5-mini` | Azure OpenAI `gpt-5-mini` by default |
+| Why keep it | Understand what came before | Build the current architecture |
+
+---
+
+## MCP Plugin Pattern
 
 **File:** `agents/plugins/mcp_plugin.py`
 
@@ -72,7 +109,7 @@ import json
 from semantic_kernel.functions import kernel_function
 
 class EnterpriseMCPPlugin:
-    """Exposes MCP tools as SK plugin functions."""
+    """Exposes MCP tools as agent-callable functions."""
 
     @kernel_function(description="Find a customer by email address")
     def get_customer(self, email: str) -> str:
@@ -179,7 +216,7 @@ from agents.kernel_setup import build_kernel
 from agents.plugins.mcp_plugin import EnterpriseMCPPlugin
 from agents.prompts import DRAFT_PROMPT
 
-async def run_webshop_pipeline(customer_email: str, provider: str = "anthropic") -> dict:
+async def run_webshop_pipeline(customer_email: str, provider: str = "azure_openai") -> dict:
     start = time.time()
     kernel = build_kernel(provider)
     plugin = EnterpriseMCPPlugin()
@@ -201,7 +238,7 @@ async def run_webshop_pipeline(customer_email: str, provider: str = "anthropic")
     refunds = json.loads(plugin.get_refunds(order["orderId"]))
     knowledge = json.loads(plugin.search_knowledge("delivery delay compensation refund approval"))
 
-    # 3. Draft with LLM
+    # 3. Draft with LLM through the Semantic Kernel comparison agent
     from semantic_kernel.agents import ChatCompletionAgent
     from semantic_kernel.contents import ChatHistory
 
@@ -239,8 +276,8 @@ Write the summary.
 
     # 6. Cost + log
     latency_ms = int((time.time() - start) * 1000)
-    model = "claude-sonnet-4-6" if provider == "anthropic" else "gpt-4.1-mini"
-    vendor = "Anthropic" if provider == "anthropic" else "OpenAI"
+    model = os.getenv("AI_PRIMARY_MODEL", "gpt-5-mini")
+    vendor = os.getenv("AI_PRIMARY_VENDOR", "Azure OpenAI")
 
     from enterprise_agentops_mcp.tools.cost import calculate_agent_run_cost
     from enterprise_agentops_mcp.tools.observability import log_agent_run
@@ -310,7 +347,7 @@ Flow:
 
 ---
 
-## Azure AI Foundry: Policy Agent
+## Microsoft Foundry (formerly Azure AI Foundry): Policy Agent
 
 1. Go to https://ai.azure.com
 2. Create **Agent**: _Policy and Governance Agent_
@@ -334,7 +371,7 @@ Output JSON: { "answer": "...", "requiresApproval": true/false, "source": "...",
 
 Microsoft 365 Agents SDK is not part of the Day 9 deliverables. It is a post-MVP phase.
 
-The same Azure Function Orchestrator API, Semantic Kernel orchestration and Enterprise AgentOps MCP Server will be reused. The M365 agent surface replaces Copilot Studio as the entry point without changing anything below it.
+The same Azure Function Orchestrator API, Microsoft Agent Framework orchestration and Enterprise AgentOps MCP Server will be reused. The M365 agent surface replaces Copilot Studio as the entry point without changing anything below it.
 
 Initial testing is done through **Microsoft 365 Agents Playground**. Optional Teams deployment follows if a suitable developer tenant is available.
 
@@ -345,3 +382,4 @@ See `apps/m365-agent/` in the repository structure.
 ## Next Step
 
 [docs/10-observability-polish.md](10-observability-polish.md) — Day 10: observability, cost dashboard, demo polish.
+

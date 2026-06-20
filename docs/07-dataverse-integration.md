@@ -1,20 +1,54 @@
 # Stage 7: Dataverse Integration (Day 7)
 
-Replace mock JSON data with live Dataverse Web API calls. Keep mock mode as a fallback.
+Replace mock JSON data with live Dataverse Web API calls.
 
 ---
 
 ## Day 7 Deliverables
 
-- [ ] `dataverse_service.py` implemented with MSAL authentication
-- [ ] `get_customer_by_email` reading from Dataverse
-- [ ] `get_latest_order` reading from Dataverse
-- [ ] `get_shipment_status` reading from Dataverse
-- [ ] `get_returns_for_order` reading from Dataverse
-- [ ] `get_refunds_for_order` reading from Dataverse
-- [ ] `log_agent_run` writing to Dataverse AgentRun table
-- [ ] `create_approval_request` writing to Dataverse ApprovalRequest table
-- [ ] Mock mode still functional with `MCP_DATA_MODE=mock`
+- [x] `dataverse_service.py` implemented with MSAL authentication
+- [x] `get_customer_by_email` reading from Dataverse
+- [x] `get_latest_order` reading from Dataverse
+- [x] `get_shipment_status` reading from Dataverse
+- [x] `get_returns_for_order` reading from Dataverse
+- [x] `get_refunds_for_order` reading from Dataverse
+- [x] `log_agent_run` writing to Dataverse AgentRun table
+- [x] `create_approval_request` writing to Dataverse ApprovalRequest table
+- [x] Mock mode still functional with `MCP_DATA_MODE=mock`
+
+Important:
+
+- `mock` mode is only for the earlier workshop stages and local learning loops
+- the real runtime target for this stage is Dataverse with Service Principal auth
+- do not silently fall back from Dataverse to mock if auth or connectivity fails; raise the exception
+- in this repository's current environment pairing, the Dataverse credentials come from the PAC-created Service Principal documented in Day 6
+
+## Current Implementation Status
+
+Implemented in code:
+
+- `mcp-server/src/enterprise_agentops_mcp/services/dataverse_service.py`
+- Dataverse mode for:
+  - `get_customer_by_email`
+  - `get_latest_order`
+  - `get_order_details`
+  - `get_order_items`
+  - `get_shipment_status`
+  - `get_returns_for_order`
+  - `get_refunds_for_order`
+  - `log_agent_run`
+  - `create_approval_request`
+
+Still pending:
+
+- end-to-end orchestrator execution in `MCP_DATA_MODE=dataverse`
+
+Current environment finding:
+
+- standard `contacts` and `accounts` tables are accessible
+- the scripted Day 6 schema is now deployed in the current Dataverse environment
+- the sample seed data is now loaded and can be reset with `Clear-AgentOpsDataverseSeed.ps1`
+- in the current scripted v1 schema, custom references are stored as text columns such as `cr_contactid`, `cr_accountid`, `cr_orderkeyref`, `cr_orderitemkeyref`, `cr_returnkeyref`, and `cr_shipmentkeyref`
 
 ---
 
@@ -186,6 +220,12 @@ else:
 MCP_DATA_MODE=mock       # Use local JSON files
 MCP_DATA_MODE=dataverse  # Use Dataverse Web API
 ```
+
+Rule:
+
+- choose the mode explicitly
+- if `MCP_DATA_MODE=dataverse` and auth fails, the code should fail loudly
+- do not auto-switch to mock behind the scenes
 
 ---
 
