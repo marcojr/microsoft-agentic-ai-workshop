@@ -199,9 +199,9 @@ Switch provider: change `provider="azure_openai"` to `provider="gemini"` in the 
 
 ### Minute 4:30 — Governance and Approval (1:00)
 
-Show Power Automate → approval flow → manager receives email → approves.
+Show Power Apps Approval Console → pending approval list → manager reviews the request → approves.
 
-> "Compensation actions require a human in the loop. The approval request is created in Dataverse and triggers a Power Automate flow that routes to the service manager."
+> "Compensation actions require a human in the loop. The approval request is created in Dataverse, shown in a Power Apps approval console, and the manager decision calls back into the Orchestrator so thread state is updated."
 
 ### Minute 5:30 — Observability Dashboard (1:00)
 
@@ -255,7 +255,7 @@ MVP path:
 ┌─────────────────────────────────────┐
 │  Governance + Observability         │
 │  [App Insights] [Power BI]          │
-│  [Key Vault] [Power Automate]       │
+│  [Key Vault] [Power Apps]           │
 │  [Microsoft Foundry (formerly Azure AI Foundry) Policy Agent]    │
 └─────────────────────────────────────┘
 ```
@@ -279,7 +279,7 @@ Future custom-engine agent surface (post-MVP):
 ## 8 Interview Talking Points
 
 1. **Governed agentic AI** — all LLM actions go through typed MCP tools; no direct database access from agents
-2. **Human-in-the-loop** — high-risk actions create approval requests in Dataverse, routed via Power Automate; agent never confirms compensation pre-approval
+2. **Human-in-the-loop** — high-risk actions create approval requests in Dataverse, resolved through a Power Apps Approval Console; agent never confirms compensation pre-approval
 3. **Provider agnosticism** — Azure OpenAI and Gemini are selected through configuration
 4. **Cost engineering** — every token logged, every cost calculated; Power BI shows spend by workflow, model and vendor
 5. **Observable by design** — Application Insights traces + Dataverse AgentRun table + quality/groundedness/risk scores per run
@@ -310,4 +310,3 @@ This demonstrates that the architecture is not limited to Copilot Studio as the 
 ## Next Step
 
 All 10 stages complete. Return to [CLAUDE.md](../CLAUDE.md) for the full project reference.
-

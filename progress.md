@@ -591,3 +591,259 @@ Decision:
 - Moved direct `search_knowledge_articles` orchestration out of `webshop_order_support.py`.
 - The new `KnowledgeAgent` builds the policy search query from shipment, refund, return, risk, and intake context.
 - Added focused `KnowledgeAgent` tests for contextual query construction and MCP tool usage.
+
+## 2026-06-21 - Governance agent extraction
+
+- Added `apps/orchestrator-api/src/agents/governance_agent.py` with deterministic order-support risk and approval rules.
+- Moved delay/refund approval decision logic out of `webshop_order_support.py`.
+- The orchestrator now consumes a shaped governance decision for risk, approval type, approval reason, and approval trigger.
+- Added governance metadata to the endpoint response and agent-run event payload.
+- Added focused `GovernanceAgent` tests for high, medium, and low risk paths.
+
+## 2026-06-21 - Critic agent extraction
+
+- Added `apps/orchestrator-api/src/agents/critic_agent.py` as a deterministic MCP-backed evaluator for generated summaries.
+- Moved direct `evaluate_response` calls out of `webshop_order_support.py`.
+- The new `CriticAgent` builds required source references and preserves `toolsCalled` metadata for telemetry.
+- Added focused `CriticAgent` tests for evaluation input shaping and missing-source handling.
+
+## 2026-06-21 - Cost agent extraction
+
+- Added `apps/orchestrator-api/src/agents/cost_agent.py` as a deterministic MCP-backed cost calculation agent.
+- Moved direct `calculate_agent_run_cost` calls out of `webshop_order_support.py`.
+- The new `CostAgent` preserves `toolsCalled` metadata for telemetry.
+- Added a focused `CostAgent` test for MCP pricing-tool delegation.
+
+## 2026-06-21 - Direction expansion: HITL, thread state, type safety
+
+- Adopted human-in-the-loop, thread-based state management, stronger type safety, and a richer domain/workflow model as explicit project direction.
+- Added typed workflow models in `apps/orchestrator-api/src/agents/models.py`: `GovernanceDecision`, `ApprovalOutcome`, and `ThreadState`.
+- Added local MVP thread persistence in `apps/orchestrator-api/src/shared/thread_state_store.py`.
+- Added `apps/orchestrator-api/src/agents/workflow_agent.py` to coordinate approval creation, approval events, run logging, run events, and thread-state updates.
+- Updated `webshop_order_support.py` to accept/reuse `threadId`, return thread and approval state, and delegate workflow side effects to `WorkflowAgent`.
+- Updated docs to document human-in-the-loop, thread state, typed contracts and AutoGen positioning.
+- Created `changeOfDirection.md` at the repository root to explain what changed, why it changed, and the reasoning behind the decisions.
+
+## 2026-06-21 - Thread state storage direction: Azure Table Storage
+
+- Confirmed Cosmos DB is not currently part of the project docs, Pulumi infrastructure, or deployed local configuration.
+- Chose Azure Table Storage as the production-shaped runtime store for thread state, using Dataverse for business/audit records and Blob Storage only for larger snapshots if needed.
+- Updated `ThreadStateStore` to support explicit `THREAD_STATE_STORE=file|table` modes.
+- Added Azure Table Storage dependencies to `apps/orchestrator-api/requirements.txt`.
+- Updated Pulumi to create a `threadStateTable`, configure the Function App for `THREAD_STATE_STORE=table`, and assign the Function managed identity the `Storage Table Data Contributor` role.
+- Updated docs and `changeOfDirection.md` to remove Cosmos DB as the near-term direction for thread state.
+
+## 2026-06-21 - Thread state import cycle fix
+
+- Found a circular import when using `ThreadStateStore` directly: importing `src.agents.models` executed `src/agents/__init__.py`, which imported `WorkflowAgent`, which imported `ThreadStateStore`.
+- Removed eager agent imports from `apps/orchestrator-api/src/agents/__init__.py`; agents should be imported from their concrete modules.
+- Re-ran the direct `ThreadStateStore(mode="file")` smoke test successfully.
+- Re-ran orchestrator tests successfully: `26 passed`.
+
+## 2026-06-21 - Power Apps approval console direction
+
+- Decided to use a browser-based Power Apps Approval Console as the primary human-in-the-loop approval surface.
+- Added MCP approval tools to list pending approval requests and approve/reject them.
+- Added Orchestrator API endpoints:
+  - `GET /api/approvals/pending`
+  - `POST /api/approvals/decision`
+- Extended approval records with Power Apps-friendly fields: thread ID, customer name/email, order number, decision comment and decision timestamp.
+- Updated Dataverse schema v1 so `cr_approvalrequest` includes the new approval console fields.
+- Added `docs/11-power-apps-approval-console.md` with the target flow, API contract and Canvas App design.
+- Isolated mock JSON data in test fixtures so approval and run tests no longer mutate versioned data files.
+- Verified MCP tests with `uv run pytest tests -q` -> `35 passed`.
+- Verified Orchestrator tests with `.venv/bin/python -m pytest tests -q` -> `29 passed`.
+
+## 2026-06-21 - Documentation alignment for Power Apps HITL
+
+- Audited docs for stale Power Automate/Teams-first human approval language after adopting the Power Apps Approval Console direction.
+- Updated `README.md`, `CLAUDE.md`, `context.md`, `docs/08-secure-rag.md`, and `docs/10-observability-polish.md` so the primary HITL UX is Power Apps, with Power Automate kept as optional integration/notification.
+- Updated demo/interview wording so the approval walkthrough now shows Power Apps listing pending Dataverse approval requests and calling the Orchestrator decision endpoint.
+- Removed the obsolete `POST /api/agents/approval/create` contract from current API docs and updated examples to include thread/approval state.
+
+## 2026-06-21 - Power Platform script env path fix
+
+- Fixed Power Platform Dataverse scripts so they read `.env` from the repository root by default.
+- Kept `mcp-server/.env` as a legacy fallback and documented `-EnvPath` as an override.
+- Updated `docs/06-dataverse-setup.md` with Linux `pwsh` commands.
+- Verified `pwsh -File ./power-platform/scripts/Deploy-AgentOpsDataverseSchema.ps1 -WhatIf` succeeds on Linux and detects the 6 pending approval-console columns on `cr_approvalrequest`.
+- Confirmed after real schema deploy that `cr_threadid`, `cr_customername`, `cr_customeremail`, `cr_ordernumber`, `cr_decisioncomment`, and `cr_decidedon` now exist on `cr_approvalrequest`.
+
+## 2026-06-21 - Approval decision endpoint smoke test
+
+- Confirmed local Function app `GET /api/approvals/pending` returns Dataverse approval requests with thread, customer and order fields.
+- Approved `apr-87c90251` through `POST /api/approvals/decision`.
+- Verified the approval returned `status=Approved`, `threadStatus=Completed`, and `threadCurrentStep=human_approval_approved`.
+- Verified the approved request no longer appears in `GET /api/approvals/pending`.
+- Verified local thread state for `thread-ef1cb85c` contains the approval decision metadata.
+
+## 2026-06-21 - Local HTML approval console
+
+- Added `apps/frontend-demo/approval-console.html` as a browser-based learning console over the same approval endpoints planned for Power Apps.
+- Added `GET /api/approval-console` to serve the HTML through Azure Functions so browser calls remain same-origin.
+- Verified `http://localhost:7071/api/approval-console` returns `200`.
+- Verified the HTML references `/api/approvals/pending` and `/api/approvals/decision`.
+- Verified focused approval-console tests still pass: `3 passed`.
+
+## 2026-06-21 - Power Apps connector assets
+
+- Added `power-platform/custom-connectors/agentops-approval-console.openapi.json` for the Power Apps custom connector.
+- Added `power-platform/custom-connectors/README.md` with import/host/key notes.
+- Added `power-platform/power-apps/approval-console-formulas.md` with Canvas App formulas for gallery, detail, approve and reject actions.
+- Verified the OpenAPI JSON parses and exposes `/approvals/pending` and `/approvals/decision`.
+
+## 2026-06-21T20:14:32+01:00 - Handover to other PC
+
+Session objective:
+
+- Continue the project on this Linux PC after transfer from the other machine.
+- Move Human-in-the-Loop from a JSON-only concept toward a real approval surface.
+- Keep final frontend direction as Power Apps, while using local HTML only as a learning/smoke-test surface.
+
+Major decisions:
+
+- Final approver UX is Power Apps Canvas App, not the local HTML page.
+- Power Apps will use a Custom Connector over the Orchestrator API.
+- Dataverse stores approval business/audit records in `cr_approvalrequest`.
+- Azure Table Storage remains the production-shaped technical thread-state store.
+- Local HTML console exists only to feel/test the flow before building the Power Apps canvas app.
+- `.env` at repository root is the canonical local env file. `mcp-server/.env` is legacy fallback only.
+
+Implemented in this session:
+
+- Added approval decision/list capabilities to MCP:
+  - `list_pending_approval_requests`
+  - `decide_approval_request`
+- Extended Dataverse approval record support with:
+  - `cr_threadid`
+  - `cr_customername`
+  - `cr_customeremail`
+  - `cr_ordernumber`
+  - `cr_decisioncomment`
+  - `cr_decidedon`
+- Added Orchestrator approval endpoints:
+  - `GET /api/approvals/pending`
+  - `POST /api/approvals/decision`
+- Added local browser smoke-test console:
+  - `apps/frontend-demo/approval-console.html`
+  - served from `GET /api/approval-console`
+- Added Power Apps Custom Connector assets:
+  - `power-platform/custom-connectors/agentops-approval-console.openapi.json`
+  - `power-platform/custom-connectors/README.md`
+  - `power-platform/power-apps/approval-console-formulas.md`
+- Updated Power Platform scripts so `Deploy-AgentOpsDataverseSchema.ps1`, `Seed-AgentOpsDataverseData.ps1`, and `Clear-AgentOpsDataverseSeed.ps1` read root `.env` by default.
+- Updated MCP config loading so `mcp-server/src/enterprise_agentops_mcp/config.py` loads root `.env` first, then `mcp-server/.env` fallback.
+- Updated docs to make Power Apps the primary HITL direction and Power Automate optional:
+  - `README.md`
+  - `CLAUDE.md`
+  - `context.md`
+  - `changeOfDirection.md`
+  - `docs/01-project-setup.md`
+  - `docs/04-orchestrator-api.md`
+  - `docs/06-dataverse-setup.md`
+  - `docs/08-secure-rag.md`
+  - `docs/10-observability-polish.md`
+  - `docs/11-power-apps-approval-console.md`
+  - `docs/agents.md`
+
+Environment/setup fixed on this Linux PC:
+
+- Installed PowerShell 7.6.2.
+- Fixed Microsoft package repo usage enough to install/run `pwsh`.
+- Dataverse schema deploy now works from Linux using:
+
+```bash
+pwsh -File ./power-platform/scripts/Deploy-AgentOpsDataverseSchema.ps1
+```
+
+Verified during this session:
+
+- `pwsh -File ./power-platform/scripts/Deploy-AgentOpsDataverseSchema.ps1 -WhatIf`
+  - confirmed the approval-console columns exist after real deploy.
+- `GET /api/approvals/pending`
+  - returned Dataverse approval records with thread/customer/order fields.
+- `POST /api/approvals/decision`
+  - approved `apr-87c90251`.
+  - response included `threadStatus=Completed` and `threadCurrentStep=human_approval_approved`.
+  - approval disappeared from pending list.
+  - local thread state for `thread-ef1cb85c` recorded approval metadata.
+- `GET /api/approval-console`
+  - returned `200` and served the local HTML console.
+- OpenAPI validation:
+
+```bash
+python3 -m json.tool power-platform/custom-connectors/agentops-approval-console.openapi.json >/tmp/agentops-openapi.json
+```
+
+- Focused tests:
+
+```bash
+cd mcp-server
+uv run pytest tests/test_config.py tests/test_approvals.py -q
+# 8 passed
+
+cd apps/orchestrator-api
+.venv/bin/python -m pytest tests/test_approval_console.py tests/test_webshop_order_support.py -q
+# 6 passed
+
+cd apps/orchestrator-api
+.venv/bin/python -m pytest tests/test_approval_console.py -q
+# 3 passed
+```
+
+- General hygiene:
+
+```bash
+git diff --check
+# ok
+```
+
+Important runtime state:
+
+- A local Function process was already listening on `localhost:7071` during tests.
+- The local HTML console can be opened at:
+
+```text
+http://localhost:7071/api/approval-console
+```
+
+- The Power Apps Custom Connector cannot use `localhost`; it needs a public Function App host or a tunnel.
+
+Next steps for the other PC:
+
+1. Pull/receive this repo state, including uncommitted/new files.
+2. Review `git status --short`; many files are intentionally changed/untracked from the larger direction shift.
+3. Run full verification:
+
+```bash
+cd mcp-server
+uv run pytest tests -q
+
+cd ../apps/orchestrator-api
+.venv/bin/python -m pytest tests -q
+```
+
+4. Decide deploy path for public Orchestrator URL:
+   - If Pulumi local state exists on the other PC, use that state.
+   - If not, either transfer Pulumi state or deploy/publish the Function pragmatically with Azure Functions Core Tools.
+5. Once a public Function host exists, update `power-platform/custom-connectors/agentops-approval-console.openapi.json`:
+
+```text
+REPLACE_WITH_FUNCTION_HOST
+```
+
+6. Import the OpenAPI file as a Power Apps Custom Connector.
+7. Create Canvas App `AgentOps Approval Console` using formulas from:
+
+```text
+power-platform/power-apps/approval-console-formulas.md
+```
+
+8. Use the app to list approvals, approve/reject, and confirm Dataverse + thread state change.
+
+Known caveats:
+
+- `az functionapp list` should be used on the other PC to see whether a Function App already exists.
+- User does not use Pulumi Cloud. If Pulumi is needed, use `pulumi login --local`, but beware local state mismatch between PCs.
+- Power Apps cloud connector will not call the Linux machine's `localhost`.
+- Some older Dataverse approval rows do not have thread/customer/order fields because they were created before the schema/contract expansion. New rows include them.

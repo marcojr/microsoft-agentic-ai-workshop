@@ -18,11 +18,11 @@ Default active direction:
 | Intake | Classify request, extract intent | gpt-5-mini | `agents/intake_agent.py` |
 | Data | Fetch data via MCP tools | Orchestrator (no LLM) | `agents/data_agent.py` |
 | Knowledge | Retrieve policy documents | Azure AI Search | `agents/knowledge_agent.py` |
-| Governance | Check approval requirements | gpt-5-mini | `agents/governance_agent.py` |
+| Governance | Check approval requirements | Deterministic rules first; AF later if needed | `agents/governance_agent.py` |
 | Draft | Generate response summary | gpt-5-mini | `apps/orchestrator-api/src/agents/draft_agent.py` |
-| Critic/Evaluator | Evaluate quality and compliance | gpt-5-mini | `agents/critic_agent.py` |
+| Critic/Evaluator | Evaluate quality and compliance | MCP evaluation tool first; AF later if needed | `agents/critic_agent.py` |
 | Cost | Track token usage and cost | No LLM — calculation | `agents/cost_agent.py` |
-| Workflow | Log run and trigger approvals | No LLM — orchestration | `agents/workflow_agent.py` |
+| Workflow | Log run, manage thread state and trigger approvals | No LLM — orchestration | `agents/workflow_agent.py` |
 
 > **Agent surfaces:** For MVP, agents are invoked through Copilot Studio Test Chat. In the post-MVP phase, Microsoft 365 Agents SDK / Agents Playground is the custom-engine agent surface. All agents, prompts, pipelines and MCP tools are reused unchanged across both surfaces — only the entry point changes.
 
@@ -39,6 +39,9 @@ Coding agents must choose the project-correct path, not the quickest local short
 - Do not duplicate MCP tool names in prompts or agents when a tool registry/client can provide them.
 - If an agent asks the model for `toolsRequired`, inject the exact allowed MCP tool names from the MCP client/tool registry and validate the model response against that list.
 - Use typed contracts for agent outputs where practical. In Python, prefer Pydantic models and explicit parse/validation paths.
+- Human-in-the-loop must be explicit: approval status, approval ID and pending workflow step are part of the workflow contract.
+- Thread-based state is part of the orchestrator design. Agents that participate in multi-turn workflows should preserve `threadId` and update `ThreadState`.
+- The project is moving toward an extensive typed domain model. New internal agent boundaries should prefer Pydantic contracts over loose dictionaries.
 - Keep business actions behind MCP tools. Agents should not bypass the MCP layer to manipulate Dataverse, approvals, observability, or cost data directly.
 - Do not add silent fallback behavior for broken integrations. Fail clearly and record the blocker in `progress.md`.
 - Add focused tests for contracts, registry behavior, and orchestration boundaries when changing agent behavior.
@@ -56,6 +59,31 @@ The comments should make the execution flow easy to follow for learning:
 - extract telemetry/cost metadata
 
 Avoid noisy comments that merely repeat the code.
+
+## Thread State and Human Approval
+
+The orchestrator now treats workflow state as an explicit object rather than implicit chat memory.
+
+Current state model:
+
+- `ThreadState`: stores `threadId`, workflow name, current status, customer email, intent, order ID, approval ID, current step and context.
+- `GovernanceDecision`: stores risk, approval requirement, approval type, reason and trigger.
+- `ApprovalOutcome`: stores approval ID/status and whether human-in-the-loop is active.
+
+High-risk workflows must create a pending approval and return approval state to the caller. Drafts may explain that approval is pending, but agents must not present compensation or exception handling as completed until approval is resolved.
+
+Human approval surface direction:
+
+- Power Apps canvas app is the approval console.
+- Dataverse stores the approval request records.
+- Orchestrator API exposes approval list/decision endpoints for Power Apps custom connectors.
+- The decision endpoint must update both the approval record and thread state.
+
+Thread state storage direction:
+
+- local tests/development may use the file store;
+- Azure runtime should use Azure Table Storage;
+- Dataverse remains for business records and audit records, not opaque conversational state blobs.
 
 ---
 
@@ -333,7 +361,7 @@ Delegates to `calculate_agent_run_cost` MCP tool. See [docs/03-mcp-tools-extende
 
 ## Workflow Agent
 
-**Purpose:** Log the run, write telemetry, and trigger any approval flows. No LLM — pure side-effects.
+**Purpose:** Log the run, write telemetry, create approval requests and update thread state after approval decisions. No LLM — pure side-effects.
 
 **File:** `agents/workflow_agent.py`
 

@@ -12,11 +12,13 @@ from src.webshop_order_support import handle_webshop_order_support
 def test_handle_webshop_order_support_success(monkeypatch) -> None:
     from enterprise_agentops_mcp.services import service_bus_service
     from enterprise_agentops_mcp import config
+    from enterprise_agentops_mcp.tools import approvals
     import src.webshop_order_support as workflow
 
     published_events = []
     config.DATA_MODE = "mock"
     config.KNOWLEDGE_MODE = "mock"
+    approvals.DATA_MODE = "mock"
     monkeypatch.setattr(
         workflow,
         "classify_order_support_request",
@@ -63,6 +65,8 @@ def test_handle_webshop_order_support_success(monkeypatch) -> None:
     assert result["customerName"] == "John Smith"
     assert result["orderNumber"] == "WEB-1001"
     assert result["approvalRequired"] is True
+    assert result["governance"]["risk"] == "High"
+    assert result["governance"]["requiresApproval"] is True
     assert result["intent"] == "SummariseLatestOrderDeliveryStatus"
     assert result["intake"]["toolsRequired"] == [
         "get_customer_by_email",
@@ -70,17 +74,22 @@ def test_handle_webshop_order_support_success(monkeypatch) -> None:
         "get_shipment_status",
     ]
     assert published_events[0][0] == "approval"
+    assert published_events[0][1]["approvalType"] == "Compensation"
+    assert published_events[0][1]["riskLevel"] == "High"
     assert published_events[1][0] == "agent-run"
     assert published_events[1][1]["intent"] == "SummariseLatestOrderDeliveryStatus"
+    assert published_events[1][1]["governance"]["approvalTrigger"] == "DelayedShipmentWithRefundApproval"
 
 
 def test_handle_webshop_order_support_uses_email_from_intake(monkeypatch) -> None:
     from enterprise_agentops_mcp.services import service_bus_service
     from enterprise_agentops_mcp import config
+    from enterprise_agentops_mcp.tools import approvals
     import src.webshop_order_support as workflow
 
     config.DATA_MODE = "mock"
     config.KNOWLEDGE_MODE = "mock"
+    approvals.DATA_MODE = "mock"
     monkeypatch.setattr(
         workflow,
         "classify_order_support_request",

@@ -25,6 +25,8 @@ using StorageAccountArgs = Pulumi.AzureNative.Storage.StorageAccountArgs;
 using StorageKind = Pulumi.AzureNative.Storage.Kind;
 using StorageSkuArgs = Pulumi.AzureNative.Storage.Inputs.SkuArgs;
 using StorageSkuName = Pulumi.AzureNative.Storage.SkuName;
+using StorageTable = Pulumi.AzureNative.Storage.Table;
+using StorageTableArgs = Pulumi.AzureNative.Storage.TableArgs;
 using SearchSkuArgs = Pulumi.AzureNative.Search.Inputs.SkuArgs;
 using SearchSkuName = Pulumi.AzureNative.Search.SkuName;
 using ServiceBusNamespace = Pulumi.AzureNative.ServiceBus.Namespace;
@@ -62,6 +64,7 @@ using FlexNameValuePairArgs = Pulumi.AzureNative.Web.V20240401.Inputs.NameValueP
 return await Pulumi.Deployment.RunAsync(() =>
 {
     const string StorageBlobDataOwnerRoleDefinitionId = "b7e6dc6d-f1e8-4753-8033-0f276bb0955b";
+    const string StorageTableDataContributorRoleDefinitionId = "0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3";
     const string AzureOpenAiDeploymentName = "gpt-5-mini";
     const string AzureOpenAiModelName = "gpt-5-mini";
     const string AzureOpenAiModelVersion = "2025-08-07";
@@ -129,6 +132,13 @@ return await Pulumi.Deployment.RunAsync(() =>
         AccountName = workloadStorageAccount.Name,
         ContainerName = deploymentStorageContainerName,
         PublicAccess = PublicAccess.None
+    });
+
+    var threadStateTable = new StorageTable("thread-state-table", new StorageTableArgs
+    {
+        ResourceGroupName = workloadResourceGroup.Name,
+        AccountName = workloadStorageAccount.Name,
+        TableName = context.Resources.ThreadStateTable
     });
 
     var logAnalyticsWorkspace = new Workspace("log-analytics-workspace", new WorkspaceArgs
@@ -474,6 +484,21 @@ return await Pulumi.Deployment.RunAsync(() =>
                 {
                     Name = "MCP_DATA_MODE",
                     Value = "mock"
+                },
+                new FlexNameValuePairArgs
+                {
+                    Name = "THREAD_STATE_STORE",
+                    Value = "table"
+                },
+                new FlexNameValuePairArgs
+                {
+                    Name = "THREAD_STATE_TABLE_NAME",
+                    Value = threadStateTable.Name
+                },
+                new FlexNameValuePairArgs
+                {
+                    Name = "THREAD_STATE_STORAGE_ACCOUNT_URL",
+                    Value = Output.Format($"https://{workloadStorageAccount.Name}.table.core.windows.net")
                 }
             }
         },
@@ -487,6 +512,15 @@ return await Pulumi.Deployment.RunAsync(() =>
         RoleDefinitionId = Output.Format($"/subscriptions/{context.Subscription.Id}/providers/Microsoft.Authorization/roleDefinitions/{StorageBlobDataOwnerRoleDefinitionId}"),
         Scope = workloadStorageAccount.Id,
         RoleAssignmentName = workloadStorageAccount.Id.Apply(id => GuidUtility.Create(GuidUtility.UrlNamespace, $"{id}:{StorageBlobDataOwnerRoleDefinitionId}").ToString())
+    });
+
+    var workloadStorageTableContributorAssignment = new RoleAssignment("function-app-storage-table-contributor", new RoleAssignmentArgs
+    {
+        PrincipalId = functionApp.Identity.Apply(identity => identity!.PrincipalId!),
+        PrincipalType = PrincipalType.ServicePrincipal,
+        RoleDefinitionId = Output.Format($"/subscriptions/{context.Subscription.Id}/providers/Microsoft.Authorization/roleDefinitions/{StorageTableDataContributorRoleDefinitionId}"),
+        Scope = workloadStorageAccount.Id,
+        RoleAssignmentName = workloadStorageAccount.Id.Apply(id => GuidUtility.Create(GuidUtility.UrlNamespace, $"{id}:{StorageTableDataContributorRoleDefinitionId}").ToString())
     });
 
     return new Dictionary<string, object?>
@@ -521,11 +555,12 @@ return await Pulumi.Deployment.RunAsync(() =>
         ["functionAppName"] = functionApp.Name,
         ["functionAppDefaultHostName"] = functionApp.DefaultHostName,
         ["workloadDeploymentContainerName"] = workloadDeploymentContainer.Name,
+        ["threadStateTableName"] = threadStateTable.Name,
         ["functionAppStorageRoleAssignmentId"] = workloadStorageBlobOwnerAssignment.Id,
+        ["functionAppStorageTableRoleAssignmentId"] = workloadStorageTableContributorAssignment.Id,
         ["recoveryResourceGroupName"] = recoveryResourceGroup.Name,
         ["recoveryStorageAccountName"] = recoveryStorageAccount.Name,
         ["recoveryContainerName"] = recoveryContainer.Name,
         ["recoveryPathPrefix"] = context.Recovery.PathPrefix
     };
 });
-

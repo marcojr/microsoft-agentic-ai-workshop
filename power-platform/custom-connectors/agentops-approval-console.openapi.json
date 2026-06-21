@@ -1,0 +1,247 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "AgentOps Approval Console",
+    "description": "Custom connector for the Enterprise AgentOps approval console. Power Apps uses this connector to list pending human approvals and submit approve/reject decisions through the Orchestrator API.",
+    "version": "1.0.0"
+  },
+  "host": "REPLACE_WITH_FUNCTION_HOST",
+  "basePath": "/api",
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "securityDefinitions": {
+    "functionKey": {
+      "type": "apiKey",
+      "name": "code",
+      "in": "query",
+      "description": "Azure Functions host or function key. For local emulator testing this can be left blank when auth is not enforced."
+    }
+  },
+  "security": [
+    {
+      "functionKey": []
+    }
+  ],
+  "paths": {
+    "/approvals/pending": {
+      "get": {
+        "summary": "List pending approvals",
+        "description": "Returns pending human approval requests with customer, order, risk and thread context.",
+        "operationId": "ListPendingApprovals",
+        "responses": {
+          "200": {
+            "description": "Pending approval list",
+            "schema": {
+              "$ref": "#/definitions/PendingApprovalsResponse"
+            }
+          },
+          "500": {
+            "description": "Approval list failure",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/approvals/decision": {
+      "post": {
+        "summary": "Submit approval decision",
+        "description": "Approves or rejects a pending approval request and updates workflow thread state.",
+        "operationId": "SubmitApprovalDecision",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ApprovalDecisionRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Approval decision result",
+            "schema": {
+              "$ref": "#/definitions/ApprovalDecisionResponse"
+            }
+          },
+          "400": {
+            "description": "Invalid decision request",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "404": {
+            "description": "Approval not found",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Approval decision failure",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "PendingApprovalsResponse": {
+      "type": "object",
+      "properties": {
+        "approvals": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ApprovalRequest"
+          }
+        }
+      }
+    },
+    "ApprovalRequest": {
+      "type": "object",
+      "properties": {
+        "approvalId": {
+          "type": "string",
+          "example": "apr-123"
+        },
+        "relatedRecordId": {
+          "type": "string",
+          "example": "ord-1001"
+        },
+        "relatedRecordType": {
+          "type": "string",
+          "example": "order"
+        },
+        "requestedBy": {
+          "type": "string",
+          "example": "orchestrator"
+        },
+        "approvalType": {
+          "type": "string",
+          "example": "Compensation"
+        },
+        "status": {
+          "type": "string",
+          "example": "Pending"
+        },
+        "riskLevel": {
+          "type": "string",
+          "example": "High"
+        },
+        "reason": {
+          "type": "string",
+          "example": "Delayed shipment with pending refund"
+        },
+        "createdOn": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2026-06-21T14:30:08Z"
+        },
+        "approvedBy": {
+          "type": "string",
+          "x-nullable": true
+        },
+        "threadId": {
+          "type": "string",
+          "example": "thread-123"
+        },
+        "customerName": {
+          "type": "string",
+          "example": "John Smith"
+        },
+        "customerEmail": {
+          "type": "string",
+          "example": "john.smith@contoso.com"
+        },
+        "orderNumber": {
+          "type": "string",
+          "example": "WEB-1001"
+        },
+        "decisionComment": {
+          "type": "string",
+          "x-nullable": true
+        },
+        "decidedOn": {
+          "type": "string",
+          "format": "date-time",
+          "x-nullable": true
+        }
+      }
+    },
+    "ApprovalDecisionRequest": {
+      "type": "object",
+      "required": [
+        "approvalId",
+        "decision",
+        "approvedBy"
+      ],
+      "properties": {
+        "approvalId": {
+          "type": "string",
+          "example": "apr-123"
+        },
+        "threadId": {
+          "type": "string",
+          "example": "thread-123"
+        },
+        "decision": {
+          "type": "string",
+          "enum": [
+            "Approved",
+            "Rejected"
+          ],
+          "example": "Approved"
+        },
+        "approvedBy": {
+          "type": "string",
+          "example": "manager@contoso.com"
+        },
+        "comment": {
+          "type": "string",
+          "example": "Approved under team lead threshold."
+        }
+      }
+    },
+    "ApprovalDecisionResponse": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/ApprovalRequest"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "threadStatus": {
+              "type": "string",
+              "example": "Completed"
+            },
+            "threadCurrentStep": {
+              "type": "string",
+              "example": "human_approval_approved"
+            }
+          }
+        }
+      ]
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "type": "string"
+        },
+        "statusCode": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}

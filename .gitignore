@@ -42,6 +42,9 @@ infrastructure/config/azure-context.json
 *.err.log
 debug.log
 
+# Local workflow state
+**/.state/
+
 # Misc
 *.user
 *.suo

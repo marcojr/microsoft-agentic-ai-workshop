@@ -8,6 +8,9 @@ Build the Azure Functions backend that connects Copilot Studio to the MCP Server
 
 - [ ] Azure Functions project scaffolded (Python)
 - [ ] `POST /api/agents/webshop/order-support` endpoint implemented
+- [ ] `GET /api/approval-console` local HTML approval console implemented
+- [ ] `GET /api/approvals/pending` endpoint implemented for Power Apps
+- [ ] `POST /api/approvals/decision` endpoint implemented for Power Apps
 - [ ] MCP tools called via local wrapper
 - [ ] Structured JSON response returned
 - [ ] `local.settings.json` configured
@@ -25,6 +28,24 @@ func new --name webshop_order_support --template "HTTP trigger" --authlevel "fun
 func new --name customer_case_summarise --template "HTTP trigger" --authlevel "function"
 func new --name agent_runs --template "HTTP trigger" --authlevel "anonymous"
 ```
+
+---
+
+## Approval Console Endpoints
+
+Power Apps uses the Orchestrator API as the governed boundary for approval decisions.
+
+Routes:
+
+- `GET /api/approval-console`
+- `GET /api/approvals/pending`
+- `POST /api/approvals/decision`
+
+The HTML console is a local learning surface over the same API contracts that Power Apps will use.
+
+The pending route reads approval requests through MCP. The decision route records `Approved` or `Rejected` through MCP and updates thread state so the workflow can move out of `WaitingForApproval`.
+
+See [docs/11-power-apps-approval-console.md](./11-power-apps-approval-console.md).
 
 ---
 

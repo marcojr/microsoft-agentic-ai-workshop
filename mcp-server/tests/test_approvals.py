@@ -1,4 +1,9 @@
-from enterprise_agentops_mcp.tools.approvals import create_approval_request, create_follow_up_task
+from enterprise_agentops_mcp.tools.approvals import (
+    create_approval_request,
+    create_follow_up_task,
+    decide_approval_request,
+    list_pending_approval_requests,
+)
 from enterprise_agentops_mcp.tools import approvals
 
 
@@ -46,6 +51,40 @@ def test_create_approval_request_dataverse_mode(monkeypatch) -> None:
     assert captured["data"]["cr_requestedby"] == "agent"
     assert captured["data"]["cr_status"] == "Pending"
     assert captured["data"]["cr_risklevel"] == "High"
+
+
+def test_list_pending_approval_requests_in_mock_mode() -> None:
+    result = list_pending_approval_requests(limit=5)
+
+    assert "approvals" in result
+    assert len(result["approvals"]) <= 5
+    assert all(row["status"] == "Pending" for row in result["approvals"])
+
+
+def test_decide_approval_request_updates_mock_record() -> None:
+    created = create_approval_request(
+        related_record_id="ord-1001",
+        related_record_type="order",
+        approval_type="Compensation",
+        reason="Delayed shipment and requested refund compensation",
+        risk_level="High",
+        thread_id="thread-test",
+        customer_name="John Smith",
+        customer_email="john.smith@contoso.com",
+        order_number="WEB-1001",
+    )
+
+    result = decide_approval_request(
+        approval_id=created["approvalId"],
+        decision="Approved",
+        approved_by="manager@contoso.com",
+        comment="Approved under team lead threshold.",
+    )
+
+    assert result["approvalId"] == created["approvalId"]
+    assert result["status"] == "Approved"
+    assert result["approvedBy"] == "manager@contoso.com"
+    assert result["threadId"] == "thread-test"
 
 
 def test_create_follow_up_task() -> None:

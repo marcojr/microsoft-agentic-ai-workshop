@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$EnvPath = "mcp-server/.env"
+    [string]$EnvPath = ""
 )
 
 $ErrorActionPreference = "Stop"

@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$SchemaPath = "power-platform/dataverse-schema/schema.v1.json",
-    [string]$EnvPath = "mcp-server/.env",
+    [string]$EnvPath = "",
     [string]$SolutionUniqueName = "",
     [switch]$WhatIf
 )

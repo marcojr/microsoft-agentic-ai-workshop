@@ -1,9 +1,13 @@
 import time
 import asyncio
 
+from src.agents.critic_agent import CriticAgent
+from src.agents.cost_agent import CostAgent
 from src.agents.data_agent import DataAgent
+from src.agents.governance_agent import GovernanceAgent
 from src.agents.intake_agent import IntakeAgent
 from src.agents.knowledge_agent import KnowledgeAgent
+from src.agents.workflow_agent import WorkflowAgent
 from src.shared.azure_openai_client import generate_order_support_summary
 from src.shared.mcp_client import MCPClient
 
@@ -23,10 +27,6 @@ def classify_order_support_request(user_message: str) -> dict:
 def handle_webshop_order_support(body: dict) -> tuple[dict, int]:
     start = time.time()
     client = MCPClient()
-    from enterprise_agentops_mcp.services.service_bus_service import (
-        send_agent_run_event,
-        send_approval_request_event,
-    )
     from enterprise_agentops_mcp import config
 
     customer_email = body.get("customerEmail")
@@ -43,6 +43,13 @@ def handle_webshop_order_support(body: dict) -> tuple[dict, int]:
 
     intent = intake.get("intent") or "SummariseLatestOrderIssue"
     intake_tools_required = intake.get("toolsRequired", [])
+    workflow = WorkflowAgent(client)
+    thread_state = workflow.start_thread(
+        thread_id=body.get("threadId"),
+        workflow_name="WebshopOrderSupport",
+        customer_email=customer_email,
+        intent=intent,
+    )
 
     data = DataAgent(client).fetch_order_support_data(customer_email)
     if "error" in data:
@@ -55,10 +62,14 @@ def handle_webshop_order_support(body: dict) -> tuple[dict, int]:
     returns = data["returns"]
     refunds = data["refunds"]
 
-    has_delay = shipment.get("status") == "Delayed"
     refund_rows = refunds.get("refunds", [])
-    has_refund = any(item.get("requiresApproval") for item in refund_rows)
-    risk = "High" if has_delay and has_refund else "Medium"
+    governance = GovernanceAgent().assess_order_support_risk(
+        shipment=shipment,
+        refunds=refunds,
+        returns=returns,
+        intake=intake,
+    )
+    risk = governance["risk"]
     knowledge = KnowledgeAgent(client).search_order_support_knowledge(
         shipment=shipment,
         refunds=refunds,
@@ -79,107 +90,67 @@ def handle_webshop_order_support(body: dict) -> tuple[dict, int]:
     )
     summary = ai_summary["summary"]
 
-    evaluation = client.call(
-        "evaluate_response",
-        {
-            "response": summary,
-            "required_sources": [order["orderId"], order.get("shipmentId", "")],
-            "risk_level": risk,
-        },
+    evaluation = CriticAgent(client).evaluate_order_support_summary(
+        summary=summary,
+        order=order,
+        shipment=shipment,
+        risk=risk,
     )
 
-    approval_id = None
-    if has_delay and has_refund:
-        approval = client.call(
-            "create_approval_request",
-            {
-                "related_record_id": order["orderId"],
-                "related_record_type": "order",
-                "approval_type": "Compensation",
-                "reason": "Delayed shipment with pending refund",
-                "risk_level": "High",
-                "requested_by": "orchestrator",
-            },
-        )
-        approval_id = approval.get("approvalId")
-        send_approval_request_event(
-            {
-                "approvalId": approval_id,
-                "relatedRecordId": order["orderId"],
-                "relatedRecordType": "order",
-                "approvalType": "Compensation",
-                "riskLevel": "High",
-                "customerEmail": customer_email,
-                "customerName": customer["fullName"],
-                "orderNumber": order["orderNumber"],
-                "reason": "Delayed shipment with pending refund",
-            }
-        )
+    approval_outcome = workflow.create_approval_if_required(
+        governance=governance,
+        order=order,
+        customer=customer,
+        customer_email=customer_email,
+        thread_state=thread_state,
+    ).model_dump()
 
     latency_ms = int((time.time() - start) * 1000)
     model_used = config.AI_PRIMARY_MODEL
     vendor = config.AI_PRIMARY_VENDOR
 
-    cost = client.call(
-        "calculate_agent_run_cost",
-        {
-            "vendor": vendor,
-            "model": model_used,
-            "input_tokens": ai_summary["inputTokens"],
-            "output_tokens": ai_summary["outputTokens"],
-        },
+    cost = CostAgent(client).calculate_run_cost(
+        vendor=vendor,
+        model=model_used,
+        input_tokens=ai_summary["inputTokens"],
+        output_tokens=ai_summary["outputTokens"],
     )
-    tools_called = data["toolsCalled"] + knowledge["toolsCalled"] + [
-        "evaluate_response",
-        "calculate_agent_run_cost",
-    ]
-    if approval_id is not None:
-        tools_called.append("create_approval_request")
+    tools_called = (
+        data["toolsCalled"]
+        + knowledge["toolsCalled"]
+        + evaluation["toolsCalled"]
+        + cost["toolsCalled"]
+        + approval_outcome["toolsCalled"]
+    )
 
-    log = client.call(
-        "log_agent_run",
-        {
-            "workflow_name": "WebshopOrderSupport",
-            "intent": intent,
-            "model_used": model_used,
-            "vendor": vendor,
-            "input_tokens": ai_summary["inputTokens"],
-            "output_tokens": ai_summary["outputTokens"],
-            "latency_ms": latency_ms,
-            "tools_called": tools_called,
-            "requires_approval": approval_id is not None,
-            "risk_score": evaluation.get("riskScore", 0.0),
-            "quality_score": evaluation.get("qualityScore", 0.0),
-            "groundedness_score": evaluation.get("groundednessScore", 0.0),
-        },
-    )
-    send_agent_run_event(
-        {
-            "runId": log.get("runId"),
-            "workflowName": "WebshopOrderSupport",
-            "intent": intent,
-            "customerEmail": customer_email,
-            "customerName": customer["fullName"],
-            "orderNumber": order["orderNumber"],
-            "intakeToolsRequired": intake_tools_required,
-            "requiresApproval": approval_id is not None,
-            "approvalId": approval_id,
-            "riskScore": evaluation.get("riskScore", 0.0),
-            "qualityScore": evaluation.get("qualityScore", 0.0),
-            "groundednessScore": evaluation.get("groundednessScore", 0.0),
-            "estimatedCost": cost.get("estimatedCost"),
-            "modelUsed": model_used,
-            "latencyMs": latency_ms,
-        }
+    log = workflow.log_and_publish_run(
+        thread_state=thread_state,
+        intent=intent,
+        model_used=model_used,
+        vendor=vendor,
+        input_tokens=ai_summary["inputTokens"],
+        output_tokens=ai_summary["outputTokens"],
+        latency_ms=latency_ms,
+        tools_called=tools_called,
+        approval_outcome=approval_outcome,
+        governance=governance,
+        evaluation=evaluation,
+        cost=cost,
+        customer_email=customer_email,
+        customer=customer,
+        order=order,
     )
 
     return {
         "runId": log.get("runId"),
+        "threadId": thread_state.threadId,
+        "threadStatus": thread_state.status,
         "customerName": customer["fullName"],
         "orderNumber": order["orderNumber"],
         "summary": summary,
-        "approvalRequired": approval_id is not None,
-        "approvalId": approval_id,
+        "approvalRequired": approval_outcome["humanInTheLoop"],
+        "approvalStatus": approval_outcome["approvalStatus"],
+        "approvalId": approval_outcome["approvalId"],
         "qualityScore": evaluation.get("qualityScore"),
         "groundednessScore": evaluation.get("groundednessScore"),
         "estimatedCost": cost.get("estimatedCost"),
@@ -187,6 +158,8 @@ def handle_webshop_order_support(body: dict) -> tuple[dict, int]:
         "latencyMs": latency_ms,
         "intent": intent,
         "intake": intake,
+        "governance": governance,
+        "humanInTheLoop": approval_outcome["humanInTheLoop"],
         "items": order_items.get("items", []),
         "returns": returns.get("returns", []),
         "refunds": refund_rows,

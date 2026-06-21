@@ -14,6 +14,7 @@ Create Azure resources with Pulumi, but only after the Azure context file is gen
 - [x] Persistent recovery storage kept outside the disposable resource group
 - [x] Resource Group created
 - [x] Storage Account created
+- [x] Azure Table Storage table for runtime thread state created
 - [x] Azure Function App created
 - [x] Application Insights created
 - [x] Log Analytics Workspace created
@@ -305,6 +306,7 @@ Initial Pulumi scope:
 
 - Resource Group
 - Storage Account
+- Azure Table Storage table for thread state
 - Azure Function App
 - Application Insights
 - Log Analytics Workspace
@@ -453,4 +455,3 @@ Important design rule:
 
 - recovery dumps must live in persistent blob storage outside the disposable workload resource group
 - Pulumi source code lives in C#, not TypeScript
-

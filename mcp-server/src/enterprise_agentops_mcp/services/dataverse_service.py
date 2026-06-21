@@ -126,3 +126,21 @@ def dv_post(entity_set: str, data: dict[str, Any]) -> dict[str, Any]:
     if response.content:
         return response.json()
     return {"status": "created"}
+
+
+def dv_patch(entity_set: str, row_id: str, data: dict[str, Any]) -> dict[str, Any]:
+    response = httpx.patch(
+        f"{DATAVERSE_URL}/api/data/v9.2/{entity_set}({row_id})",
+        json=data,
+        headers=_headers(),
+        timeout=30,
+    )
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        raise RuntimeError(
+            f"Dataverse PATCH failed for '{entity_set}({row_id})' with status {response.status_code}: {response.text}"
+        ) from exc
+    if response.content:
+        return response.json()
+    return {"status": "updated"}

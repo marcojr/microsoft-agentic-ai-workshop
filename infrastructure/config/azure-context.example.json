@@ -72,6 +72,7 @@
     "keyVault": "kv-agentops-dev-uks-001",
     "serviceBusNamespace": "sbns-agentops-dev-001",
     "aiSearch": "srch-agentops-dev-001",
-    "azureOpenAi": "oai-agentops-dev-uks-001"
+    "azureOpenAi": "oai-agentops-dev-uks-001",
+    "threadStateTable": "AgentThreadState"
   }
 }

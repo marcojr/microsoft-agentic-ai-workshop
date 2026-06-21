@@ -3,8 +3,12 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-load_dotenv()
-load_dotenv(Path(__file__).resolve().parents[2] / ".env", override=False)
+_MCP_ROOT = Path(__file__).resolve().parents[2]
+_REPO_ROOT = _MCP_ROOT.parent
+
+load_dotenv(_REPO_ROOT / ".env", override=False)
+load_dotenv(_MCP_ROOT / ".env", override=False)
+load_dotenv(override=False)
 
 DATA_MODE = os.getenv("MCP_DATA_MODE", "mock")
 KNOWLEDGE_MODE = os.getenv(
@@ -54,4 +58,3 @@ SERVICE_BUS_AGENT_RUN_EVENTS_QUEUE = os.getenv(
 SERVICE_BUS_WORKFLOW_DEADLETTER_QUEUE = os.getenv(
     "SERVICE_BUS_WORKFLOW_DEADLETTER_QUEUE", "workflow-deadletter"
 )
-

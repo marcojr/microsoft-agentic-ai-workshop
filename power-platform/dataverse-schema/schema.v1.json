@@ -147,7 +147,13 @@
         { "type": "string", "logicalName": "cr_status", "schemaName": "cr_Status", "displayName": "Status", "maxLength": 100 },
         { "type": "string", "logicalName": "cr_risklevel", "schemaName": "cr_RiskLevel", "displayName": "Risk Level", "maxLength": 100 },
         { "type": "memo", "logicalName": "cr_reason", "schemaName": "cr_Reason", "displayName": "Reason", "maxLength": 4000 },
-        { "type": "string", "logicalName": "cr_approvedby", "schemaName": "cr_ApprovedBy", "displayName": "Approved By", "maxLength": 150 }
+        { "type": "string", "logicalName": "cr_approvedby", "schemaName": "cr_ApprovedBy", "displayName": "Approved By", "maxLength": 150 },
+        { "type": "string", "logicalName": "cr_threadid", "schemaName": "cr_ThreadId", "displayName": "Thread ID", "maxLength": 100 },
+        { "type": "string", "logicalName": "cr_customername", "schemaName": "cr_CustomerName", "displayName": "Customer Name", "maxLength": 200 },
+        { "type": "string", "logicalName": "cr_customeremail", "schemaName": "cr_CustomerEmail", "displayName": "Customer Email", "maxLength": 200 },
+        { "type": "string", "logicalName": "cr_ordernumber", "schemaName": "cr_OrderNumber", "displayName": "Order Number", "maxLength": 100 },
+        { "type": "memo", "logicalName": "cr_decisioncomment", "schemaName": "cr_DecisionComment", "displayName": "Decision Comment", "maxLength": 4000 },
+        { "type": "datetime", "logicalName": "cr_decidedon", "schemaName": "cr_DecidedOn", "displayName": "Decided On" }
       ]
     },
     {

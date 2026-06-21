@@ -153,4 +153,7 @@ public sealed class ResourceNamesContext
 
     [JsonPropertyName("azureOpenAi")]
     public required string AzureOpenAi { get; init; }
+
+    [JsonPropertyName("threadStateTable")]
+    public string ThreadStateTable { get; init; } = "AgentThreadState";
 }

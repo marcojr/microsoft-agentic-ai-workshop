@@ -16,7 +16,8 @@ The system is not a generic chatbot. It is an enterprise-grade agentic workflow 
 * A custom MCP Server as the governed enterprise tool layer
 * Dataverse as the business data layer
 * Azure AI Search as the Secure RAG layer
-* Power Automate and Logic Apps for workflow automation
+* Power Apps as the browser-based human approval console
+* Logic Apps, Service Bus and optional Power Automate for integration workflow
 * Azure Functions as the backend orchestrator
 * Pulumi for Azure infrastructure as code
 * Application Insights, Azure Monitor and Power BI for observability and AI cost engineering
@@ -47,6 +48,10 @@ A business user interacts with a Copilot Studio agent and asks questions about c
 
 The agent must retrieve structured customer/order data, search policy documents, evaluate business risk, create approval requests when required, and log all execution metadata for observability and cost tracking.
 
+The workflow is thread-aware. Each conversation or case can carry a `threadId` so later turns can rehydrate customer context, pending approval state, last run metadata and the current workflow step.
+
+Human-in-the-loop is a first-class design requirement. High-risk actions such as compensation, exception refunds and escalation must create explicit approval state and must not be communicated externally as resolved while approval is pending.
+
 ### Example User Prompt
 
 ```text
@@ -72,7 +77,8 @@ The system must:
 13. Create an approval request if required.
 14. Calculate estimated AI cost.
 15. Log the agent run with tokens, latency, tools called, model used and risk scores.
-16. Return a concise response to the user.
+16. Persist thread state with the current workflow step and approval state.
+17. Return a concise response to the user.
 
 ---
 
@@ -117,7 +123,7 @@ User
   ↓
 Copilot Studio Test Chat
   ↓
-Copilot Studio Action / Power Automate / REST Action
+Copilot Studio Action / REST Action
   ↓
 Azure Function Orchestrator API
   ↓
@@ -129,7 +135,7 @@ Enterprise AgentOps MCP Server
   ↓
 Controlled MCP Tools
   ↓
-Dataverse / Azure AI Search / Power Automate / Application Insights
+Dataverse / Azure AI Search / Power Apps / Application Insights
   ↓
 Response + AgentOps Metrics
 ```
@@ -159,7 +165,7 @@ The agent must:
 * receive natural language requests
 * ask for missing parameters when needed
 * call backend actions
-* call Power Automate when appropriate
+* call backend actions when appropriate
 * return structured responses
 * avoid exposing raw system complexity to the user
 
@@ -186,7 +192,7 @@ It must:
 * route requests to the correct workflow
 * call Microsoft Agent Framework (successor to Semantic Kernel + AutoGen) orchestration
 * call MCP tools through the MCP client
-* trigger Power Automate or Logic Apps when required
+* trigger Service Bus, Logic Apps or optional Power Automate integration when required
 * log execution metadata
 * return structured JSON responses
 
@@ -196,7 +202,8 @@ Example endpoints:
 POST /api/agents/webshop/order-support
 POST /api/agents/customer-case/summarise
 POST /api/agents/knowledge/search
-POST /api/agents/approval/create
+GET  /api/approvals/pending
+POST /api/approvals/decision
 GET  /api/agent-runs/{runId}
 ```
 
@@ -221,6 +228,11 @@ Rules:
 * Use the project source of truth instead of duplicating local lists. Examples: MCP tool names come from the MCP client/tool registry; Azure resource names come from Azure context/Pulumi config; model names come from environment/config.
 * Do not make prompts invent infrastructure. If an agent returns `toolsRequired`, the allowed tool names must be derived from the registered MCP tools and injected into the prompt or validated after the model response.
 * Keep agents behind typed contracts where practical. For Python agent outputs, prefer Pydantic response models and explicit validation.
+* Treat human approval as state, not only as a side effect. Approval ID, status and pending workflow step must be available to downstream callers.
+* Use a browser-based Power Apps Approval Console as the primary human approval UX. Dataverse stores approval records; Orchestrator decision endpoints update approval status and thread state.
+* Preserve thread state for workflows that can span multiple user turns or approval events. Prefer explicit `threadId` handling over hidden conversational memory.
+* Store runtime thread state in Azure Table Storage for production-shaped execution. Use Dataverse for business/audit records; use Blob Storage only for larger snapshots if needed.
+* Build an extensive typed domain model incrementally. Customer, order, shipment, return, refund, knowledge, governance, approval, telemetry and thread-state payloads should move toward Pydantic contracts as they become internal agent boundaries.
 * Keep MCP as the governed business-tool boundary. Agents should not directly manipulate Dataverse, approvals, cost, or observability data when an MCP tool exists.
 * Avoid silent fallbacks that hide broken integrations. If Azure OpenAI, MCP, Dataverse, Search, Service Bus, or a contract validation path fails, surface the failure clearly.
 * Add tests around contracts, tool registry behavior, and orchestration boundaries whenever changing agent behavior.
@@ -237,6 +249,26 @@ Draft Agent (Semantic Kernel comparison track)
 Critic / Evaluator Agent
 Cost Agent
 Workflow Agent
+```
+
+Shared orchestration model:
+
+```text
+ThreadState
+GovernanceDecision
+ApprovalOutcome
+AgentRunTelemetry
+OrderSupportContext
+```
+
+The first implementation uses `ThreadState`, `GovernanceDecision` and `ApprovalOutcome` as typed Pydantic contracts. The remaining domain contracts should be added as the corresponding agent boundaries harden.
+
+Thread-state persistence:
+
+```text
+Local development: file store under apps/orchestrator-api/.state/
+Production-shaped runtime: Azure Table Storage
+Dataverse: business/audit records, not conversational thread state blobs
 ```
 
 ### Intake Agent
@@ -383,7 +415,7 @@ The MCP Server must:
 * support auditability
 * support future Dataverse integration
 * support future Azure AI Search integration
-* support future Power Automate integration
+* support the Power Apps Approval Console and optional Power Automate integration
 
 ### Initial Implementation
 
@@ -393,9 +425,11 @@ Future versions will replace mock data with:
 
 * Dataverse Web API
 * Azure AI Search
-* Power Automate HTTP-triggered flows
+* Power Apps Approval Console custom connector
+* optional Power Automate HTTP-triggered flows
 * Application Insights
-* Azure SQL or CosmosDB if required
+* Azure Table Storage for runtime thread state
+* Azure SQL or Cosmos DB only if a future requirement clearly exceeds the current Dataverse/Table Storage model
 
 ---
 
@@ -511,7 +545,7 @@ MCP Client
   ↓
 Enterprise AgentOps MCP Server
   ↓
-Dataverse / Azure AI Search / Power Automate / Observability
+Dataverse / Azure AI Search / Power Apps Approval Console / Observability
 ```
 
 ---
@@ -1305,19 +1339,20 @@ Output:
 
 ---
 
-## Power Automate Workflows
+## Power Apps Approval Console
 
-Power Automate is used for human-in-the-loop and low-code business actions.
+Power Apps is the primary browser-based human-in-the-loop surface.
 
-Required flows:
+The approval console must:
 
 ```text
-Create Approval Request
-Create Follow-up Task
-Send Refund Request for Approval
-Add Support Case Note
-Escalate SLA Risk
+List pending approval requests from Dataverse or Orchestrator API
+Show customer, order, risk, reason, approval type and thread ID
+Call POST /api/approvals/decision with Approved or Rejected
+Leave thread-state mutation to the Orchestrator API
 ```
+
+Power Automate remains optional for notifications, reminders or external workflow routing, but it is not the primary approval UI direction.
 
 ---
 
@@ -1841,7 +1876,7 @@ Copilot Studio action calling Orchestrator API
 Deliverables:
 
 ```text
-Power Automate approval flow
+Power Apps approval console
 token/cost tracking
 latency logging
 model tracking
@@ -1925,7 +1960,7 @@ Estimated agent run cost: $0.012
 
 This project is a Microsoft Agentic AI reference architecture.
 
-It combines Copilot Studio for the business-facing test chat agent, Microsoft Foundry (formerly Azure AI Foundry) for managed agent capability, Microsoft Agent Framework (successor to Semantic Kernel + AutoGen) for code-first orchestration, a custom MCP Server for governed enterprise tools, Dataverse for business data, Azure AI Search for Secure RAG, Power Automate and Logic Apps for workflow automation, Pulumi for Azure infrastructure, and Application Insights / Power BI for observability and AI cost engineering.
+It combines Copilot Studio for the business-facing test chat agent, Microsoft Foundry (formerly Azure AI Foundry) for managed agent capability, Microsoft Agent Framework (successor to Semantic Kernel + AutoGen) for code-first orchestration, a custom MCP Server for governed enterprise tools, Dataverse for business data and approval records, Power Apps for the approval console, Azure AI Search for Secure RAG, Logic Apps and Service Bus for integration workflow, Pulumi for Azure infrastructure, and Application Insights / Power BI for observability and AI cost engineering.
 
 The architecture also includes Microsoft 365 Agents SDK as a final-phase custom-engine agent surface, allowing the same Orchestrator API and MCP-based tool layer to be reused beyond Copilot Studio.
 
@@ -1935,7 +1970,7 @@ The purpose is to show how enterprise AI agents can move beyond chatbot demos an
 
 ## CV Bullet
 
-Built an Enterprise AgentOps Control Tower reference architecture demonstrating end-to-end Microsoft Agentic AI across Copilot Studio, Microsoft Foundry (formerly Azure AI Foundry), Foundry Agent Service, Microsoft Agent Framework (successor to Semantic Kernel + AutoGen), MCP Server, Secure RAG, Azure AI Search, Dataverse, Power Platform, Power Automate, Logic Apps, Azure Functions, Pulumi, observability and AI cost engineering. The solution orchestrates multiple agents, enterprise data, workflow approvals, governance checks, audit trails, token/cost tracking, MCP tools and operational dashboards into a single controlled agentic workflow.
+Built an Enterprise AgentOps Control Tower reference architecture demonstrating end-to-end Microsoft Agentic AI across Copilot Studio, Microsoft Foundry (formerly Azure AI Foundry), Foundry Agent Service, Microsoft Agent Framework (successor to Semantic Kernel + AutoGen), MCP Server, Secure RAG, Azure AI Search, Dataverse, Power Apps, Power Platform, Logic Apps, Service Bus, Azure Functions, Pulumi, observability and AI cost engineering. The solution orchestrates multiple agents, enterprise data, workflow approvals, governance checks, audit trails, token/cost tracking, MCP tools and operational dashboards into a single controlled agentic workflow.
 
 ---
 
@@ -1959,7 +1994,7 @@ Dataverse is the business data layer.
 
 Azure AI Search is the Secure RAG layer.
 
-Power Platform, Power Automate, Logic Apps and Azure Functions are the workflow and integration layer.
+Power Apps is the human approval surface. Logic Apps, Service Bus and Azure Functions are the workflow and integration layer. Power Automate remains an optional notification/integration channel.
 
 Pulumi is the infrastructure as code layer.
 

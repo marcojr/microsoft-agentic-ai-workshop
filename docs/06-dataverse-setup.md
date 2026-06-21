@@ -56,6 +56,16 @@ powershell -ExecutionPolicy Bypass -File .\power-platform\scripts\Clear-AgentOps
 powershell -ExecutionPolicy Bypass -File .\power-platform\scripts\Seed-AgentOpsDataverseData.ps1
 ```
 
+On Linux/macOS with PowerShell 7:
+
+```bash
+pwsh -File ./power-platform/scripts/Deploy-AgentOpsDataverseSchema.ps1
+pwsh -File ./power-platform/scripts/Clear-AgentOpsDataverseSeed.ps1
+pwsh -File ./power-platform/scripts/Seed-AgentOpsDataverseData.ps1
+```
+
+The scripts read Dataverse credentials from `.env` at the repository root by default. `mcp-server/.env` is still supported as a legacy fallback. Use `-EnvPath <path>` only when intentionally testing another env file.
+
 Important current design choice:
 
 - for v1, custom `cr_*` tables use text reference columns such as `cr_contactid`, `cr_accountid`, `cr_orderkeyref`, `cr_orderitemkeyref`, `cr_returnkeyref`, and `cr_shipmentkeyref`
@@ -146,6 +156,14 @@ For the current scripted implementation, the MCP reads from standard Dataverse c
 | Risk Level | `cr_risklevel` | Choice: Low / Medium / High |
 | Reason | `cr_reason` | Multiline Text |
 | Approved By | `cr_approvedby` | Text |
+| Thread ID | `cr_threadid` | Text |
+| Customer Name | `cr_customername` | Text |
+| Customer Email | `cr_customeremail` | Text |
+| Order Number | `cr_ordernumber` | Text |
+| Decision Comment | `cr_decisioncomment` | Multiline Text |
+| Decided On | `cr_decidedon` | DateTime |
+
+These additional approval columns support the Power Apps Approval Console. Power Apps can show useful pending-approval context without re-running the agent workflow, while the Orchestrator remains responsible for applying approval decisions to thread state.
 
 ### cr_agentrun (custom table — observability)
 

@@ -23,6 +23,8 @@ class MCPClient:
         from enterprise_agentops_mcp.tools.approvals import (
             create_approval_request,
             create_follow_up_task,
+            decide_approval_request,
+            list_pending_approval_requests,
         )
         from enterprise_agentops_mcp.tools.cases import get_case_details, get_open_cases
         from enterprise_agentops_mcp.tools.cost import calculate_agent_run_cost
@@ -45,6 +47,7 @@ class MCPClient:
             "calculate_agent_run_cost": calculate_agent_run_cost,
             "create_approval_request": create_approval_request,
             "create_follow_up_task": create_follow_up_task,
+            "decide_approval_request": decide_approval_request,
             "evaluate_response": evaluate_response,
             "get_account_by_name": get_account_by_name,
             "get_case_details": get_case_details,
@@ -57,6 +60,7 @@ class MCPClient:
             "get_returns_for_order": get_returns_for_order,
             "get_shipment_status": get_shipment_status,
             "log_agent_run": log_agent_run,
+            "list_pending_approval_requests": list_pending_approval_requests,
             "search_knowledge_articles": search_knowledge_articles,
         }
 

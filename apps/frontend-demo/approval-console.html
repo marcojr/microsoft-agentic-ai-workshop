@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AgentOps Approval Console</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #15181e;
+      --muted: #647084;
+      --line: #d8dee8;
+      --blue: #2563eb;
+      --green: #16803c;
+      --red: #c73535;
+      --amber: #b7791f;
+      --shadow: 0 10px 28px rgba(28, 37, 54, .10);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    button, input, textarea {
+      font: inherit;
+    }
+
+    .shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    header {
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 24px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .approver {
+      width: min(320px, 34vw);
+      min-width: 220px;
+      height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0 10px;
+      color: var(--text);
+      background: #fff;
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+      gap: 18px;
+      padding: 18px;
+      min-height: 0;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .list-panel {
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .count {
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .list {
+      overflow: auto;
+      padding: 8px;
+    }
+
+    .approval-row {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      padding: 12px;
+      text-align: left;
+      background: #fff;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .approval-row + .approval-row {
+      margin-top: 6px;
+    }
+
+    .approval-row:hover {
+      border-color: #b8c3d6;
+      background: #f9fbff;
+    }
+
+    .approval-row.active {
+      border-color: var(--blue);
+      background: #f3f7ff;
+    }
+
+    .row-title {
+      font-weight: 700;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .row-meta {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .risk {
+      height: 24px;
+      min-width: 54px;
+      display: inline-grid;
+      place-items: center;
+      padding: 0 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .risk.High {
+      color: #831b1b;
+      background: #fde7e7;
+    }
+
+    .risk.Medium {
+      color: #704c10;
+      background: #fff3cc;
+    }
+
+    .risk.Low {
+      color: #145c32;
+      background: #def7e9;
+    }
+
+    .detail-panel {
+      display: grid;
+      grid-template-rows: 1fr auto;
+    }
+
+    .detail {
+      overflow: auto;
+      padding: 22px;
+    }
+
+    .empty {
+      height: 100%;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      text-align: center;
+      padding: 24px;
+    }
+
+    .detail h2 {
+      margin: 0 0 6px;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+
+    .subhead {
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .field {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fbfcfe;
+      min-width: 0;
+    }
+
+    .label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .value {
+      font-weight: 650;
+      overflow-wrap: anywhere;
+    }
+
+    .reason {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      line-height: 1.45;
+      background: #fff;
+      overflow-wrap: anywhere;
+    }
+
+    .decision-bar {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      align-items: end;
+      padding: 14px;
+      border-top: 1px solid var(--line);
+      background: #ffffff;
+      border-radius: 0 0 8px 8px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 44px;
+      max-height: 120px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    .btn {
+      height: 38px;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      padding: 0 14px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+    }
+
+    .btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .refresh {
+      color: var(--blue);
+      background: #eef4ff;
+      border-color: #c9dcff;
+    }
+
+    .approve {
+      background: var(--green);
+    }
+
+    .reject {
+      background: var(--red);
+    }
+
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      max-width: min(420px, calc(100vw - 36px));
+      padding: 12px 14px;
+      border-radius: 8px;
+      color: #fff;
+      background: #273244;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .16s ease, transform .16s ease;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 840px) {
+      header {
+        height: auto;
+        align-items: stretch;
+        flex-direction: column;
+        padding: 14px;
+      }
+
+      .header-actions {
+        width: 100%;
+      }
+
+      .approver {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .main {
+        grid-template-columns: 1fr;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .decision-bar {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <h1>AgentOps Approval Console</h1>
+      <div class="header-actions">
+        <input id="approver" class="approver" value="manager@contoso.com" aria-label="Approver email">
+        <button id="refresh" class="btn refresh" type="button">Refresh</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="panel list-panel" aria-label="Pending approvals">
+        <div class="toolbar">
+          <strong>Pending approvals</strong>
+          <span id="count" class="count">0 items</span>
+        </div>
+        <div id="list" class="list"></div>
+      </section>
+
+      <section class="panel detail-panel" aria-label="Approval details">
+        <div id="detail" class="detail">
+          <div class="empty">No approval selected</div>
+        </div>
+        <div class="decision-bar">
+          <textarea id="comment" placeholder="Decision comment" aria-label="Decision comment"></textarea>
+          <button id="approve" class="btn approve" type="button" disabled>Approve</button>
+          <button id="reject" class="btn reject" type="button" disabled>Reject</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const apiBase = new URL("/api", window.location.origin).toString();
+    const state = {
+      approvals: [],
+      selectedId: null,
+      busy: false
+    };
+
+    const listEl = document.getElementById("list");
+    const detailEl = document.getElementById("detail");
+    const countEl = document.getElementById("count");
+    const commentEl = document.getElementById("comment");
+    const approverEl = document.getElementById("approver");
+    const approveBtn = document.getElementById("approve");
+    const rejectBtn = document.getElementById("reject");
+    const refreshBtn = document.getElementById("refresh");
+    const toastEl = document.getElementById("toast");
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function showToast(message) {
+      toastEl.textContent = message;
+      toastEl.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toastEl.classList.remove("show"), 2600);
+    }
+
+    function selectedApproval() {
+      return state.approvals.find(item => item.approvalId === state.selectedId) ?? null;
+    }
+
+    function setBusy(value) {
+      state.busy = value;
+      refreshBtn.disabled = value;
+      approveBtn.disabled = value || !selectedApproval();
+      rejectBtn.disabled = value || !selectedApproval();
+    }
+
+    function formatDate(value) {
+      if (!value) return "";
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) return value;
+      return parsed.toLocaleString();
+    }
+
+    function renderList() {
+      countEl.textContent = `${state.approvals.length} ${state.approvals.length === 1 ? "item" : "items"}`;
+      if (!state.approvals.length) {
+        listEl.innerHTML = `<div class="empty">No pending approvals</div>`;
+        return;
+      }
+
+      listEl.innerHTML = state.approvals.map(item => `
+        <button class="approval-row ${item.approvalId === state.selectedId ? "active" : ""}"
+                type="button"
+                data-id="${escapeHtml(item.approvalId)}">
+          <span>
+            <span class="row-title">${escapeHtml(item.orderNumber || item.relatedRecordId || item.approvalId)}</span>
+            <span class="row-meta">${escapeHtml(item.customerName || "Unknown customer")} · ${escapeHtml(item.approvalType)}</span>
+          </span>
+          <span class="risk ${escapeHtml(item.riskLevel || "Low")}">${escapeHtml(item.riskLevel || "Low")}</span>
+        </button>
+      `).join("");
+    }
+
+    function renderDetail() {
+      const item = selectedApproval();
+      approveBtn.disabled = state.busy || !item;
+      rejectBtn.disabled = state.busy || !item;
+
+      if (!item) {
+        detailEl.innerHTML = `<div class="empty">No approval selected</div>`;
+        return;
+      }
+
+      detailEl.innerHTML = `
+        <h2>${escapeHtml(item.orderNumber || item.relatedRecordId || item.approvalId)}</h2>
+        <div class="subhead">${escapeHtml(item.customerName || "Unknown customer")} · ${escapeHtml(item.customerEmail || "")}</div>
+
+        <div class="grid">
+          <div class="field">
+            <div class="label">Approval ID</div>
+            <div class="value">${escapeHtml(item.approvalId)}</div>
+          </div>
+          <div class="field">
+            <div class="label">Thread ID</div>
+            <div class="value">${escapeHtml(item.threadId || "")}</div>
+          </div>
+          <div class="field">
+            <div class="label">Approval Type</div>
+            <div class="value">${escapeHtml(item.approvalType)}</div>
+          </div>
+          <div class="field">
+            <div class="label">Risk</div>
+            <div class="value">${escapeHtml(item.riskLevel)}</div>
+          </div>
+          <div class="field">
+            <div class="label">Related Record</div>
+            <div class="value">${escapeHtml(item.relatedRecordType)} · ${escapeHtml(item.relatedRecordId)}</div>
+          </div>
+          <div class="field">
+            <div class="label">Created</div>
+            <div class="value">${escapeHtml(formatDate(item.createdOn))}</div>
+          </div>
+        </div>
+
+        <div class="label">Reason</div>
+        <div class="reason">${escapeHtml(item.reason)}</div>
+      `;
+    }
+
+    function render() {
+      renderList();
+      renderDetail();
+    }
+
+    async function loadApprovals() {
+      setBusy(true);
+      try {
+        const response = await fetch(`${apiBase}/approvals/pending`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await response.json();
+        state.approvals = payload.approvals ?? [];
+        if (!state.approvals.some(item => item.approvalId === state.selectedId)) {
+          state.selectedId = state.approvals[0]?.approvalId ?? null;
+        }
+        render();
+      } catch (error) {
+        showToast(`Load failed: ${error.message}`);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    async function decide(decision) {
+      const item = selectedApproval();
+      if (!item) return;
+
+      setBusy(true);
+      try {
+        const response = await fetch(`${apiBase}/approvals/decision`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            approvalId: item.approvalId,
+            threadId: item.threadId,
+            decision,
+            approvedBy: approverEl.value.trim(),
+            comment: commentEl.value.trim() || null
+          })
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload.error || `HTTP ${response.status}`);
+
+        commentEl.value = "";
+        showToast(`${decision}: ${item.approvalId}`);
+        await loadApprovals();
+      } catch (error) {
+        showToast(`Decision failed: ${error.message}`);
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    listEl.addEventListener("click", event => {
+      const row = event.target.closest("[data-id]");
+      if (!row) return;
+      state.selectedId = row.dataset.id;
+      render();
+    });
+
+    refreshBtn.addEventListener("click", loadApprovals);
+    approveBtn.addEventListener("click", () => decide("Approved"));
+    rejectBtn.addEventListener("click", () => decide("Rejected"));
+
+    loadApprovals();
+  </script>
+</body>
+</html>

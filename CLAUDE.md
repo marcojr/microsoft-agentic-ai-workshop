@@ -41,6 +41,7 @@ Secondary model: `gemini-3.5-flash` via Gemini.
 │   ├── 08-secure-rag.md             ← day 8: Azure AI Search + RAG
 │   ├── 09-agent-framework.md        ← day 9: Microsoft Agent Framework + one Semantic Kernel comparison agent
 │   ├── 10-observability-polish.md   ← day 10: cost, dashboard, demo
+│   ├── 11-power-apps-approval-console.md ← day 11: Power Apps human approval console
 │   ├── agents.md                    ← all agents: roles, prompts, wiring
 │   ├── ai-azure-openai.md           ← Azure OpenAI integration guide
 │   ├── ai-codex.md                  ← OpenAI Codex integration guide
@@ -53,7 +54,9 @@ Secondary model: `gemini-3.5-flash` via Gemini.
 ├── agents/                          ← agent definitions and prompts
 ├── copilot-studio/                  ← Copilot Studio exports + screenshots
 ├── foundry/                         ← Microsoft Foundry (formerly Azure AI Foundry) config
-├── power-platform/                  ← Power Automate flows + Dataverse schema
+├── power-platform/                  ← Power Apps approval console assets + Dataverse schema
+│   ├── custom-connectors/           ← OpenAPI contracts for Power Apps connectors
+│   └── power-apps/                  ← Canvas App formulas and build notes
 ├── infrastructure/pulumi/           ← Pulumi IaC (C#)
 ├── data/                            ← sample documents + seed scripts
 └── dashboards/                      ← Power BI reports + screenshots
@@ -101,7 +104,8 @@ pac auth create --url https://yourorg.crm.dynamics.com
 | Backend API | Azure Functions (Python) |
 | Business Data | Dataverse |
 | Knowledge Search | Azure AI Search (Secure RAG) |
-| Workflow Automation | Power Automate + Logic Apps + Service Bus |
+| Human Approval UX | Power Apps Approval Console |
+| Workflow Automation | Logic Apps + Service Bus; Power Automate optional integration |
 | Observability | Application Insights + Azure Monitor |
 | Cost Dashboard | Power BI |
 | Infrastructure | Pulumi (C#) |
@@ -120,6 +124,10 @@ pac auth create --url https://yourorg.crm.dynamics.com
 - Use typed contracts for agent inputs/outputs where practical. In Python, prefer Pydantic models plus explicit validation over loose dictionaries for LLM response contracts.
 - Keep MCP as the governed tool boundary. Agents and orchestrators should call tools through the MCP client wrapper or a registered MCP integration, not import random business services directly.
 - If a best-practice implementation needs a small shared abstraction, add it deliberately instead of duplicating local lists or prompt fragments.
+- Human-in-the-loop is a first-class workflow concern. Approval state must be explicit and auditable; agents must not communicate restricted resolutions while approval is pending.
+- The primary approval surface is the Power Apps Approval Console. Dataverse stores approval records; Orchestrator API decision endpoints update approval status and thread state.
+- Thread-based state management is part of the orchestrator architecture. New workflow code should preserve or update `threadId`/thread state when a request belongs to an ongoing case.
+- Prefer typed domain models for internal contracts. Plain dictionaries are acceptable at MCP boundaries, but agent-to-agent orchestration should move toward Pydantic models.
 - Every MCP tool must log its execution. No silent tool calls.
 - All agent runs must call `log_agent_run` and `calculate_agent_run_cost`.
 - Approval gates (`create_approval_request`) cannot be bypassed by agents.
@@ -163,7 +171,7 @@ DATAVERSE_SP_CLIENT_ID=
 DATAVERSE_SP_CLIENT_SECRET=
 DATAVERSE_SP_TENANT_ID=
 
-# Power Automate
+# Optional Power Automate callback
 POWER_AUTOMATE_APPROVAL_URL=
 
 # Azure

@@ -20,13 +20,15 @@ Official docs:
 
 - [x] Semantic Kernel installed and configured for the Draft Agent comparison track
 - [ ] MCP tools registered for Microsoft Agent Framework
-- [ ] Intake Agent classifying requests with Microsoft Agent Framework
-- [ ] Data Agent retrieving data via MCP tools
-- [ ] Knowledge Agent using Secure RAG
-- [ ] Governance Agent checking approval requirements with Microsoft Agent Framework
+- [x] Intake Agent classifying requests with Microsoft Agent Framework
+- [x] Data Agent retrieving data via MCP tools
+- [x] Knowledge Agent using Secure RAG through MCP
+- [x] Governance Agent checking approval requirements with deterministic rules
 - [x] Draft Agent generating summaries with Azure OpenAI through Semantic Kernel
-- [ ] Critic Agent evaluating the draft with Microsoft Agent Framework
-- [ ] Full WebshopOrderSupport pipeline running end-to-end
+- [x] Critic Agent evaluating the draft through the MCP evaluation tool
+- [x] Cost Agent calculating token cost through MCP
+- [x] Workflow Agent managing approval, thread state, run logging and events
+- [x] Full WebshopOrderSupport pipeline running end-to-end
 - [ ] Copilot Studio agent created in test chat
 - [ ] Copilot Studio HTTP action calling Orchestrator API
 - [ ] Screenshot of agent working
@@ -110,6 +112,37 @@ Prefer the correct project architecture over quick local shortcuts.
 - Agent outputs should use typed response contracts where practical. In the current Python path, use Pydantic models and explicit validation.
 - Keep Dataverse, approvals, observability, cost, and knowledge retrieval behind MCP tools unless the stage explicitly documents a lower-level integration task.
 - Avoid silent fallbacks. If the selected framework, Azure OpenAI API version, MCP integration, or response contract fails, surface the failure and record it in `progress.md`.
+- Treat human-in-the-loop as explicit state. Approval status and pending workflow step must be visible in the orchestrator response and thread state.
+- Preserve `threadId` for multi-turn workflows and approval continuations.
+- Move internal agent contracts toward Pydantic models as boundaries become stable.
+
+---
+
+## Updated Direction: HITL, Thread State, Type Safety
+
+The Stage 9 implementation now includes the first production-shaped building blocks for enterprise agent workflows:
+
+- Human-in-the-loop approval is represented by `ApprovalOutcome`, not just an approval tool side effect.
+- Thread-based state is represented by `ThreadState`. Local development can use the file store; Azure runtime should use Azure Table Storage.
+- Type safety is represented by Pydantic contracts for LLM outputs and workflow decisions.
+- The orchestrator composes specialized agents rather than directly calling every MCP tool inline.
+
+Current sequence:
+
+```text
+IntakeAgent -> DataAgent -> GovernanceAgent -> KnowledgeAgent -> DraftAgent -> CriticAgent -> CostAgent -> WorkflowAgent
+```
+
+AutoGen remains a conceptual predecessor. The active runtime direction stays Microsoft Agent Framework plus deterministic MCP-backed agents, with exactly one Semantic Kernel comparison agent.
+
+Thread-state storage decision:
+
+```text
+Azure Table Storage = runtime thread state
+Dataverse = business/audit records
+Blob Storage = optional large snapshots/debug traces
+Cosmos DB = not part of the current architecture
+```
 
 ---
 

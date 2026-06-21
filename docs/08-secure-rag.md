@@ -79,7 +79,7 @@ are eligible for compensation credit.
 ## Process
 1. Log the compensation request as an Approval Request
 2. Attach relevant order and shipment records
-3. Submit for approval via Power Automate flow
+3. Submit for approval through the Power Apps Approval Console
 4. Only communicate compensation after approval is confirmed
 ```
 

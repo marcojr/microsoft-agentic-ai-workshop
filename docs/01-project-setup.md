@@ -82,7 +82,8 @@ Complete list of tools the MCP Server will expose:
 POST /api/agents/webshop/order-support
 POST /api/agents/customer-case/summarise
 POST /api/agents/knowledge/search
-POST /api/agents/approval/create
+GET  /api/approvals/pending
+POST /api/approvals/decision
 GET  /api/agent-runs/{runId}
 ```
 
@@ -101,11 +102,15 @@ GET  /api/agent-runs/{runId}
 ```json
 {
   "runId": "run-0001",
+  "threadId": "thread-0001",
+  "threadStatus": "WaitingForApproval",
   "customerName": "John Smith",
   "orderNumber": "WEB-1001",
   "summary": "...",
   "approvalRequired": true,
+  "approvalStatus": "Pending",
   "approvalId": "apr-9001",
+  "humanInTheLoop": true,
   "qualityScore": 0.88,
   "groundednessScore": 0.91,
   "estimatedCost": 0.012,

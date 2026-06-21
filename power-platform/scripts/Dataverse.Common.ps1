@@ -33,12 +33,39 @@ function Read-EnvFile {
     return $result
 }
 
-function Get-DataverseConnectionSettings {
+function Resolve-AgentOpsEnvPath {
     param(
-        [string]$EnvPath = "mcp-server/.env"
+        [string]$EnvPath = ""
     )
 
-    $envValues = Read-EnvFile -Path $EnvPath
+    if (-not [string]::IsNullOrWhiteSpace($EnvPath)) {
+        if (-not (Test-Path -LiteralPath $EnvPath)) {
+            throw "Env file not found: $EnvPath"
+        }
+        return $EnvPath
+    }
+
+    $candidates = @(
+        ".env",
+        "mcp-server/.env"
+    )
+
+    foreach ($candidate in $candidates) {
+        if (Test-Path -LiteralPath $candidate) {
+            return $candidate
+        }
+    }
+
+    throw "Env file not found. Expected .env at the repository root or mcp-server/.env."
+}
+
+function Get-DataverseConnectionSettings {
+    param(
+        [string]$EnvPath = ""
+    )
+
+    $resolvedEnvPath = Resolve-AgentOpsEnvPath -EnvPath $EnvPath
+    $envValues = Read-EnvFile -Path $resolvedEnvPath
     $required = @(
         "DATAVERSE_URL",
         "DATAVERSE_SP_CLIENT_ID",
@@ -48,7 +75,7 @@ function Get-DataverseConnectionSettings {
 
     foreach ($name in $required) {
         if (-not $envValues.ContainsKey($name) -or [string]::IsNullOrWhiteSpace($envValues[$name])) {
-            throw "Missing required Dataverse setting '$name' in $EnvPath"
+            throw "Missing required Dataverse setting '$name' in $resolvedEnvPath"
         }
     }
 
