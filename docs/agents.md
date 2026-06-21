@@ -32,6 +32,17 @@ All agents and coding assistants working on this project must update `progress.m
 
 Keep entries short, chronological and factual.
 
+## Implementation Quality Rules
+
+Coding agents must choose the project-correct path, not the quickest local shortcut.
+
+- Do not duplicate MCP tool names in prompts or agents when a tool registry/client can provide them.
+- If an agent asks the model for `toolsRequired`, inject the exact allowed MCP tool names from the MCP client/tool registry and validate the model response against that list.
+- Use typed contracts for agent outputs where practical. In Python, prefer Pydantic models and explicit parse/validation paths.
+- Keep business actions behind MCP tools. Agents should not bypass the MCP layer to manipulate Dataverse, approvals, observability, or cost data directly.
+- Do not add silent fallback behavior for broken integrations. Fail clearly and record the blocker in `progress.md`.
+- Add focused tests for contracts, registry behavior, and orchestration boundaries when changing agent behavior.
+
 ## Code Commenting Rule
 
 Agent code must include short step-by-step comments in English.
@@ -69,7 +80,7 @@ Output ONLY valid JSON in this format:
   "intent": "what the user wants to achieve",
   "businessDomain": "CustomerService | Logistics | Finance | HR | Legal",
   "urgency": "Low | Medium | High",
-  "toolsRequired": ["list", "of", "tool", "names"],
+  "toolsRequired": ["exact", "registered", "MCP", "tool", "names"],
   "riskLevel": "Low | Medium | High",
   "approvalLikelihood": "Low | Medium | High",
   "contactEmail": "email if provided or null",
@@ -77,6 +88,9 @@ Output ONLY valid JSON in this format:
 }
 
 Do not explain. Do not include any text outside the JSON object.
+
+For `toolsRequired`, use only exact tool names from the MCP client/tool registry.
+Do not return business system names, categories, or paraphrases.
 ```
 
 **Example Input:**
@@ -374,4 +388,3 @@ Model mapping:
 | `gemini` | gemini-3.5-flash | gemini-3.5-flash |
 
 See [docs/ai-azure-openai.md](ai-azure-openai.md) and [docs/ai-gemini.md](ai-gemini.md) for provider guides.
-

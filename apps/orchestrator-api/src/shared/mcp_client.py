@@ -18,7 +18,7 @@ class MCPClient:
     def __init__(self) -> None:
         _ensure_import_paths()
 
-    def call(self, tool_name: str, params: dict) -> dict:
+    def _tool_map(self) -> dict:
         from enterprise_agentops_mcp.tools.accounts import get_account_by_name
         from enterprise_agentops_mcp.tools.approvals import (
             create_approval_request,
@@ -41,7 +41,7 @@ class MCPClient:
         )
         from enterprise_agentops_mcp.tools.shipments import get_shipment_status
 
-        tool_map = {
+        return {
             "calculate_agent_run_cost": calculate_agent_run_cost,
             "create_approval_request": create_approval_request,
             "create_follow_up_task": create_follow_up_task,
@@ -59,6 +59,12 @@ class MCPClient:
             "log_agent_run": log_agent_run,
             "search_knowledge_articles": search_knowledge_articles,
         }
+
+    def list_tool_names(self) -> list[str]:
+        return sorted(self._tool_map().keys())
+
+    def call(self, tool_name: str, params: dict) -> dict:
+        tool_map = self._tool_map()
         fn = tool_map.get(tool_name)
         if fn is None:
             return {"error": f"Unknown tool: {tool_name}"}

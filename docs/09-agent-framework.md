@@ -100,6 +100,19 @@ The important comparison:
 
 ---
 
+## Implementation Rules for Coding Agents
+
+Prefer the correct project architecture over quick local shortcuts.
+
+- MCP tool names must come from the MCP client/tool registry, not from duplicated prompt literals.
+- Agent prompts may receive an injected allowed-tool list, but the source of that list must be code-owned and testable.
+- `toolsRequired` must contain exact registered MCP tool names only. Do not let the model return business system names such as "Customer Database" or "Shipment Tracking".
+- Agent outputs should use typed response contracts where practical. In the current Python path, use Pydantic models and explicit validation.
+- Keep Dataverse, approvals, observability, cost, and knowledge retrieval behind MCP tools unless the stage explicitly documents a lower-level integration task.
+- Avoid silent fallbacks. If the selected framework, Azure OpenAI API version, MCP integration, or response contract fails, surface the failure and record it in `progress.md`.
+
+---
+
 ## MCP Plugin Pattern
 
 **File:** `agents/plugins/mcp_plugin.py`
@@ -175,11 +188,12 @@ Classify the user request and output JSON:
   "intent": "what the user wants",
   "businessDomain": "CustomerService | Logistics | Finance | HR | Legal",
   "urgency": "Low | Medium | High",
-  "toolsRequired": ["list of tool names"],
+  "toolsRequired": ["exact registered MCP tool names only"],
   "riskLevel": "Low | Medium | High",
   "approvalLikelihood": "Low | Medium | High"
 }
 Only output valid JSON. No explanations.
+Use only tool names from the MCP client/tool registry for toolsRequired.
 """
 
 DRAFT_PROMPT = """
@@ -382,4 +396,3 @@ See `apps/m365-agent/` in the repository structure.
 ## Next Step
 
 [docs/10-observability-polish.md](10-observability-polish.md) — Day 10: observability, cost dashboard, demo polish.
-

@@ -7,7 +7,7 @@ Create the repository structure, define MCP tool contracts, Dataverse schema and
 ## Day 1 Deliverables
 
 - [ ] Folder structure created
-- [ ] `context.MD` present and reviewed
+- [ ] `context.md` present and reviewed
 - [ ] `CLAUDE.md` present
 - [ ] `README.md` created
 - [ ] MCP tool contracts defined
@@ -244,4 +244,3 @@ Full content for each file is defined in [docs/02-mcp-server.md](02-mcp-server.m
 ## Next Step
 
 [docs/02-mcp-server.md](02-mcp-server.md) — Day 2: MCP Server local with first tools.
-

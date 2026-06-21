@@ -502,3 +502,92 @@ Decision:
 - Created `pc-transfer.txt` at the repository root for continuing the project on another Linux machine.
 - Included current architecture decisions, implemented components, required local env vars, Linux setup commands, smoke tests, and the recommended next prompt for the next Codex.
 
+## 2026-06-20 - Stage 9 intake agent start
+
+- Read `pc-transfer.txt`, `CLAUDE.md`, `context.MD`, `docs/09-agent-framework.md`, and the current `draft_agent.py` to resume from the other machine without restarting the project.
+- Confirmed the next meaningful Stage 9 step is the Microsoft Agent Framework `IntakeAgent`, while keeping `DraftAgent` on Semantic Kernel as the comparison track.
+- Installed `agent-framework` into the orchestrator API environment and verified the real Python package surface locally before implementing against it.
+- Added `apps/orchestrator-api/src/agents/intake_agent.py` using Microsoft Agent Framework with Azure OpenAI routing and short step-by-step English comments.
+- Added `apps/orchestrator-api/tests/test_intake_agent.py` to cover strict JSON parsing and basic input validation for the new intake agent.
+- Verified the Linux orchestrator environment after the new agent work:
+  - `python -m compileall src tests`: passed
+  - orchestrator tests: `4 passed`
+- Found that the installed Agent Framework 1.9.0 Python surface differs from the simplified docs examples:
+  - used `agent_framework.Agent`
+  - used `agent_framework.openai.OpenAIChatClient`
+  - routed Azure OpenAI through `azure_endpoint` + `api_version`
+- Reinstalled the missing `azure-servicebus` dependency in the orchestrator virtual environment after the Linux transfer so the existing webshop tests could import `service_bus_service` again.
+
+## 2026-06-20 - Draft agent structured output for didactics
+
+- Updated `apps/orchestrator-api/src/agents/draft_agent.py` so the Semantic Kernel comparison agent now requests a structured contract instead of free-form text.
+- Added a simple didactic response contract with:
+  - `summary`
+  - `approvalRequired`
+- Configured the Semantic Kernel Azure OpenAI execution settings to use `response_format=DraftSummaryContract` and `structured_json_response=True`.
+- Added `apps/orchestrator-api/tests/test_draft_agent.py` to validate the contract parsing path independently of live model calls.
+- Simplified the didactic contract again so it now contains only `summary` and `approvalRequired`.
+
+## 2026-06-20 - Intake agent runtime fix
+
+- Confirmed the local `.env` is being loaded correctly for Azure OpenAI.
+- Ran a real `IntakeAgent` smoke test and found the first implementation was using the Agent Framework Responses-style client path, which failed against the current Azure OpenAI setup with `API version not supported`.
+- Updated `apps/orchestrator-api/src/agents/intake_agent.py` to use `agent_framework.openai.OpenAIChatCompletionClient` instead of `OpenAIChatClient`.
+- Re-ran the real `IntakeAgent` smoke test successfully; it returned a structured classification JSON for the delayed-order scenario.
+- Re-ran orchestrator tests after the client swap: `5 passed`.
+
+## 2026-06-21 - Intake agent structured contract alignment
+
+- Updated `apps/orchestrator-api/src/agents/intake_agent.py` to use a Pydantic output contract for consistency with `DraftAgent`.
+- Added `IntakeClassificationContract` and wired the Agent Framework call with `options={"response_format": IntakeClassificationContract}`.
+- Replaced the manual required-key validation with a typed `_parse_contract(...)` validation path.
+- Added a dedicated intake contract parsing test in `apps/orchestrator-api/tests/test_intake_agent.py`.
+
+## 2026-06-21 - Coding agent best-practice guidance
+
+- Confirmed the authoritative project spec file is now `context.md` on Linux; `context.MD` is no longer present in the working tree.
+- Updated `CLAUDE.md`, `README.md`, and `docs/01-project-setup.md` to reference `context.md`.
+- Added explicit guidance for future coding agents to prefer the correct project architecture over quick local shortcuts.
+- Documented that MCP tool names must come from the MCP client/tool registry, not duplicated prompt literals.
+- Documented that `toolsRequired` must use exact registered MCP tool names and should be validated against the registry.
+
+## 2026-06-21 - Intake agent MCP tool registry enforcement
+
+- Refactored `apps/orchestrator-api/src/shared/mcp_client.py` so the local MCP wrapper exposes registered tool names through `list_tool_names()`.
+- Updated `apps/orchestrator-api/src/agents/intake_agent.py` to inject the registered MCP tool list into the intake prompt.
+- Added validation so `toolsRequired` rejects hallucinated/non-registered tool names instead of passing them through.
+- Added tests covering MCP tool-name listing and rejection of invented Intake tool names.
+- Fixed the intake prompt builder so JSON braces in the schema example are escaped correctly when injecting registered MCP tool names.
+
+## 2026-06-21 - Intake wired into webshop orchestrator
+
+- Added the `IntakeAgent` as the first step in `apps/orchestrator-api/src/webshop_order_support.py`.
+- The order-support handler now accepts a natural-language `message`, `userMessage`, or `prompt`, and can use `contactEmail` extracted by Intake when `customerEmail` is not provided directly.
+- The orchestrator now logs the Intake-derived `intent` instead of the previous fixed intent string.
+- Added Intake diagnostics to the response and Service Bus event payload through `intake` / `intakeToolsRequired`.
+- Updated actual `tools_called` telemetry so `create_approval_request` is included only when an approval is created.
+- Recreated the ignored local Azure Functions `apps/orchestrator-api/local.settings.json` on the Linux machine so `func start` can detect the Python worker runtime.
+- Removed `MCP_DATA_MODE` from `apps/orchestrator-api/local.settings.json` because it was overriding the root `.env`; verified the effective runtime config now reads `DATA_MODE=dataverse` and `KNOWLEDGE_MODE=search`.
+- Reduced `apps/orchestrator-api/local.settings.json` to Azure Functions host-only settings (`FUNCTIONS_WORKER_RUNTIME`, `AzureWebJobsStorage`) so application/runtime settings come only from the root `.env`.
+
+## 2026-06-21 - Shared Azure OpenAI agent runtime
+
+- Added `apps/orchestrator-api/src/shared/agent_runtime.py` with `AzureOpenAIAgentRuntime`.
+- Centralized Azure OpenAI config validation and client/kernel construction for Microsoft Agent Framework and Semantic Kernel.
+- Updated `IntakeAgent` to build its Agent Framework client through the shared runtime.
+- Updated `DraftAgent` to build its Semantic Kernel kernel/settings through the shared runtime while keeping it as the only SK comparison agent.
+- Added focused runtime tests for missing configuration and Semantic Kernel settings construction.
+
+## 2026-06-21 - Data agent extraction
+
+- Added `apps/orchestrator-api/src/agents/data_agent.py` as a deterministic MCP-backed agent for order-support data retrieval.
+- Moved customer, latest order, items, shipment, returns, and refunds retrieval out of `webshop_order_support.py`.
+- Updated the orchestrator to consume the shaped `DataAgent` payload and reuse `toolsCalled` for telemetry.
+- Added focused `DataAgent` tests for successful sequencing and missing-customer early exit.
+
+## 2026-06-21 - Knowledge agent extraction
+
+- Added `apps/orchestrator-api/src/agents/knowledge_agent.py` as a deterministic MCP-backed policy retrieval agent.
+- Moved direct `search_knowledge_articles` orchestration out of `webshop_order_support.py`.
+- The new `KnowledgeAgent` builds the policy search query from shipment, refund, return, risk, and intake context.
+- Added focused `KnowledgeAgent` tests for contextual query construction and MCP tool usage.

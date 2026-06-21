@@ -60,6 +60,8 @@ func new --name agent_runs --template "HTTP trigger" --authlevel "anonymous"
 
 In the MVP, the client imports directly from the MCP Server Python package. In production, it would use the MCP client library or HTTP.
 
+The wrapper is also the local source of truth for registered MCP tool names used by orchestrator-side agents. Do not duplicate tool-name lists inside prompts. If an agent needs an allowed list such as `toolsRequired`, derive it from this wrapper/registry and validate the model output against it.
+
 ```python
 import sys, os
 
@@ -270,4 +272,3 @@ Gemini uses `GEMINI_API_KEY`; see the official key setup guide: https://ai.googl
 ## Next Step
 
 [docs/05-pulumi-infrastructure.md](05-pulumi-infrastructure.md) — Day 5: Pulumi + Azure resources.
-

@@ -1,51 +1,30 @@
 import json
 
-from semantic_kernel import Kernel
-from semantic_kernel.connectors.ai.open_ai import (
-    AzureChatCompletion,
-    AzureChatPromptExecutionSettings,
-)
+from pydantic import BaseModel
 from semantic_kernel.functions import KernelArguments
+
+from src.shared.agent_runtime import AzureOpenAIAgentRuntime
+
+
+class DraftSummaryContract(BaseModel):
+    summary: str
+    approvalRequired: bool
 
 
 class DraftAgent:
     """Generates grounded customer-support summaries with Azure OpenAI."""
 
     def __init__(self) -> None:
-        from enterprise_agentops_mcp import config
+        # Step 1: Create the shared Azure OpenAI runtime for Semantic Kernel.
+        runtime = AzureOpenAIAgentRuntime()
 
-        # Step 1: Read Azure OpenAI settings from the project configuration.
-        endpoint = config.AZURE_OPENAI_ENDPOINT.rstrip("/")
-        api_key = config.AZURE_OPENAI_API_KEY
-        deployment = config.AZURE_OPENAI_DEPLOYMENT_NAME
+        # Step 2: Build the Semantic Kernel comparison-agent runtime.
+        self.kernel = runtime.build_semantic_kernel()
 
-        # Step 2: Fail fast when required configuration is missing.
-        if not endpoint:
-            raise ValueError("AZURE_OPENAI_ENDPOINT is required.")
-        if not api_key:
-            raise ValueError("AZURE_OPENAI_API_KEY is required.")
-        if not deployment:
-            raise ValueError("AZURE_OPENAI_DEPLOYMENT_NAME is required.")
-
-        # Step 3: Create the Semantic Kernel instance used only by this comparison agent.
-        self.kernel = Kernel()
-
-        # Step 4: Register Azure OpenAI as the chat completion service.
-        self.kernel.add_service(
-            AzureChatCompletion(
-                service_id="azure-openai",
-                deployment_name=deployment,
-                endpoint=endpoint,
-                api_key=api_key,
-                api_version="2024-10-21",
-            )
-        )
-
-        # Step 5: Configure GPT-5-compatible execution settings.
-        self.settings = AzureChatPromptExecutionSettings(
-            service_id="azure-openai",
-            max_completion_tokens=1600,
-            reasoning_effort="low",
+        # Step 3: Configure GPT-5-compatible structured output settings.
+        self.settings = runtime.build_semantic_kernel_settings(
+            response_format=DraftSummaryContract,
+            structured_json_response=True,
         )
 
     async def generate_summary(
@@ -59,13 +38,20 @@ class DraftAgent:
         knowledge: list[dict],
         risk: str,
     ) -> dict:
-        # Step 1: Define the model instructions for a safe, grounded support summary.
+        # Step 1: Define the model instructions for a safe, grounded structured response.
         prompt = """
 You are an enterprise order support agent.
 
-Write a concise, factual support summary grounded only in the provided data.
-Mention approval needs when present.
-Never promise compensation before approval is complete.
+Return ONLY valid JSON that matches the provided response schema.
+
+The JSON must include:
+- summary: a concise factual support summary
+- approvalRequired: true when refunds or compensation require approval
+
+Rules:
+- Ground every field only in the provided data
+- Mention approval needs when present
+- Never promise compensation before approval is complete
 
 Customer/order context:
 {{$context_json}}
@@ -79,6 +65,7 @@ Customer/order context:
                 "email": customer["email"],
             },
             "order": {
+                "id": order.get("orderId"),
                 "number": order["orderNumber"],
                 "deliveryStatus": order["deliveryStatus"],
                 "status": order["status"],
@@ -103,17 +90,29 @@ Customer/order context:
         if result is None:
             raise ValueError("Semantic Kernel returned no result.")
 
-        # Step 5: Convert the model result into the support summary text.
+        # Step 5: Read the raw structured JSON returned by the model.
         content = str(result).strip()
         if not content:
             raise ValueError("Semantic Kernel returned an empty summary.")
 
-        # Step 6: Extract token usage and model metadata for AgentOps telemetry.
+        # Step 6: Validate the response against the didactic output contract.
+        contract = self._parse_contract(content)
+
+        # Step 7: Extract token usage and model metadata for AgentOps telemetry.
         inner = result.get_inner_content()
         usage = getattr(inner, "usage", None)
         return {
-            "summary": content,
+            "summary": contract.summary,
+            "approvalRequired": contract.approvalRequired,
             "inputTokens": getattr(usage, "prompt_tokens", 0),
             "outputTokens": getattr(usage, "completion_tokens", 0),
             "model": getattr(inner, "model", "gpt-5-mini"),
         }
+
+    @staticmethod
+    def _parse_contract(content: str) -> DraftSummaryContract:
+        # Step 1: Parse the raw JSON text exactly as returned by the model.
+        data = json.loads(content)
+
+        # Step 2: Validate the contract so downstream code sees typed fields.
+        return DraftSummaryContract.model_validate(data)

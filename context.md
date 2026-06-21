@@ -212,6 +212,20 @@ Semantic Kernel is not the strategic direction for the whole project. It remains
 
 All agent and orchestration code should include short step-by-step comments in English. The goal is educational clarity: explain the major execution steps and why they exist, without adding comments that simply repeat obvious syntax.
 
+### Coding Agent Implementation Rules
+
+Coding agents working in this repository must prefer the correct production-shaped path over the fastest local shortcut.
+
+Rules:
+
+* Use the project source of truth instead of duplicating local lists. Examples: MCP tool names come from the MCP client/tool registry; Azure resource names come from Azure context/Pulumi config; model names come from environment/config.
+* Do not make prompts invent infrastructure. If an agent returns `toolsRequired`, the allowed tool names must be derived from the registered MCP tools and injected into the prompt or validated after the model response.
+* Keep agents behind typed contracts where practical. For Python agent outputs, prefer Pydantic response models and explicit validation.
+* Keep MCP as the governed business-tool boundary. Agents should not directly manipulate Dataverse, approvals, cost, or observability data when an MCP tool exists.
+* Avoid silent fallbacks that hide broken integrations. If Azure OpenAI, MCP, Dataverse, Search, Service Bus, or a contract validation path fails, surface the failure clearly.
+* Add tests around contracts, tool registry behavior, and orchestration boundaries whenever changing agent behavior.
+* Update `progress.md` after meaningful implementation, verification, decision, or blocker events.
+
 Specialised agents:
 
 ```text

@@ -5,6 +5,7 @@
 azure-functions
 azure-search-documents
 azure-servicebus
+agent-framework
 fastmcp
 google-genai
 httpx

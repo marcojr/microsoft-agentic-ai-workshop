@@ -346,5 +346,89 @@
     "reason": "Delayed shipment with pending refund",
     "createdOn": "2026-06-20T10:34:44.613929+00:00",
     "approvedBy": null
+  },
+  {
+    "approvalId": "apr-88b5e3f8",
+    "relatedRecordId": "ord-1001",
+    "relatedRecordType": "order",
+    "requestedBy": "orchestrator",
+    "approvalType": "Compensation",
+    "status": "Pending",
+    "riskLevel": "High",
+    "reason": "Delayed shipment with pending refund",
+    "createdOn": "2026-06-20T22:33:57.413066+00:00",
+    "approvedBy": null
+  },
+  {
+    "approvalId": "apr-3c88c30f",
+    "relatedRecordId": "ord-1001",
+    "relatedRecordType": "order",
+    "requestedBy": "orchestrator",
+    "approvalType": "Compensation",
+    "status": "Pending",
+    "riskLevel": "High",
+    "reason": "Delayed shipment with pending refund",
+    "createdOn": "2026-06-20T22:44:40.145034+00:00",
+    "approvedBy": null
+  },
+  {
+    "approvalId": "apr-220676d2",
+    "relatedRecordId": "ord-1001",
+    "relatedRecordType": "order",
+    "requestedBy": "orchestrator",
+    "approvalType": "Compensation",
+    "status": "Pending",
+    "riskLevel": "High",
+    "reason": "Delayed shipment with pending refund",
+    "createdOn": "2026-06-20T22:45:19.057349+00:00",
+    "approvedBy": null
+  },
+  {
+    "approvalId": "apr-b351640d",
+    "relatedRecordId": "ord-1001",
+    "relatedRecordType": "order",
+    "requestedBy": "orchestrator",
+    "approvalType": "Compensation",
+    "status": "Pending",
+    "riskLevel": "High",
+    "reason": "Delayed shipment with pending refund",
+    "createdOn": "2026-06-20T22:57:25.364308+00:00",
+    "approvedBy": null
+  },
+  {
+    "approvalId": "apr-80e7d0da",
+    "relatedRecordId": "ord-1001",
+    "relatedRecordType": "order",
+    "requestedBy": "orchestrator",
+    "approvalType": "Compensation",
+    "status": "Pending",
+    "riskLevel": "High",
+    "reason": "Delayed shipment with pending refund",
+    "createdOn": "2026-06-20T23:01:32.992178+00:00",
+    "approvedBy": null
+  },
+  {
+    "approvalId": "apr-ad3f2dfe",
+    "relatedRecordId": "ord-1001",
+    "relatedRecordType": "order",
+    "requestedBy": "orchestrator",
+    "approvalType": "Compensation",
+    "status": "Pending",
+    "riskLevel": "High",
+    "reason": "Delayed shipment with pending refund",
+    "createdOn": "2026-06-20T23:01:59.499800+00:00",
+    "approvedBy": null
+  },
+  {
+    "approvalId": "apr-c15c4fe4",
+    "relatedRecordId": "ord-1001",
+    "relatedRecordType": "order",
+    "requestedBy": "orchestrator",
+    "approvalType": "Compensation",
+    "status": "Pending",
+    "riskLevel": "High",
+    "reason": "Delayed shipment with pending refund",
+    "createdOn": "2026-06-20T23:47:30.647870+00:00",
+    "approvedBy": null
   }
 ]

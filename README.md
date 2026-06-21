@@ -59,7 +59,7 @@ Service Principal
 
 ## Key References
 
-- [context.MD](./context.MD)
+- [context.md](./context.md)
 - [progress.md](./progress.md)
 - [docs/00-setup.md](./docs/00-setup.md)
 - [docs/01-project-setup.md](./docs/01-project-setup.md)

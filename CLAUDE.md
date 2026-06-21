@@ -28,7 +28,7 @@ Secondary model: `gemini-3.5-flash` via Gemini.
 ```
 /
 ├── CLAUDE.md                        ← you are here
-├── context.MD                       ← authoritative project spec
+├── context.md                       ← authoritative project spec
 ├── docs/
 │   ├── 00-setup.md                  ← install everything (start here)
 │   ├── 01-project-setup.md          ← day 1: structure + contracts
@@ -110,11 +110,16 @@ pac auth create --url https://yourorg.crm.dynamics.com
 
 ## Working Rules for Claude
 
-- The authoritative spec is `context.MD`. When in doubt, follow it.
+- The authoritative spec is `context.md`. When in doubt, follow it.
 - Record every meaningful setup step, implementation step, decision, verification result and blocker in `progress.md` at the repository root.
 - Keep `progress.md` short, chronological and factual.
 - Always start with mock data (`MCP_DATA_MODE=mock`). Replace with real services only after the mock pattern works.
 - Never hardcode secrets. Use `.env` locally and Key Vault in Azure.
+- Prefer the correct production-shaped path over shortcuts. Do not hardcode business tool names, model names, schemas, or resource names when the project already has a source of truth.
+- Agent prompts must not invent available tools. If an agent returns `toolsRequired`, derive the allowed values from the MCP client/tool registry and inject that list into the prompt or validate against it.
+- Use typed contracts for agent inputs/outputs where practical. In Python, prefer Pydantic models plus explicit validation over loose dictionaries for LLM response contracts.
+- Keep MCP as the governed tool boundary. Agents and orchestrators should call tools through the MCP client wrapper or a registered MCP integration, not import random business services directly.
+- If a best-practice implementation needs a small shared abstraction, add it deliberately instead of duplicating local lists or prompt fragments.
 - Every MCP tool must log its execution. No silent tool calls.
 - All agent runs must call `log_agent_run` and `calculate_agent_run_cost`.
 - Approval gates (`create_approval_request`) cannot be bypassed by agents.
