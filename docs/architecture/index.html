@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Enterprise AgentOps Architecture</title>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@panzoom/panzoom@4.6.0/dist/panzoom.min.js"></script>
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --surface: #ffffff;
+      --surface-2: #eef3f8;
+      --ink: #18202b;
+      --muted: #667085;
+      --line: #d8dee8;
+      --blue: #2563eb;
+      --green: #168a5b;
+      --amber: #b7791f;
+      --red: #b42318;
+      --shadow: 0 18px 45px rgba(31, 41, 55, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--bg);
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: end;
+      padding: 28px 36px 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+      max-width: 900px;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .badge {
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface-2);
+      color: #344054;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 240px 1fr 320px;
+      min-height: calc(100vh - 108px);
+    }
+
+    nav {
+      padding: 24px 18px;
+      border-right: 1px solid var(--line);
+      background: var(--surface);
+    }
+
+    .nav-title {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .nav-button {
+      display: block;
+      width: 100%;
+      margin: 0 0 8px;
+      padding: 10px 12px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--ink);
+      text-align: left;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .nav-button:hover {
+      background: var(--surface-2);
+    }
+
+    .nav-button.active {
+      border-color: #b8cdf8;
+      background: #e9f0ff;
+      color: #173b8f;
+      font-weight: 700;
+    }
+
+    .stage-list {
+      margin-top: 26px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .stage {
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      gap: 10px;
+      align-items: start;
+      margin: 12px 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      margin-top: 4px;
+      border-radius: 50%;
+      background: var(--blue);
+    }
+
+    .dot.green {
+      background: var(--green);
+    }
+
+    .dot.amber {
+      background: var(--amber);
+    }
+
+    .dot.red {
+      background: var(--red);
+    }
+
+    .workspace {
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .view-title {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .tool-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-button {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .diagram-shell {
+      height: calc(100vh - 190px);
+      min-height: 620px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .diagram-canvas {
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      padding: 34px;
+      position: relative;
+    }
+
+    .diagram {
+      width: 100%;
+      min-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .diagram svg {
+      display: block;
+      height: auto !important;
+      max-width: none !important;
+    }
+
+    aside {
+      padding: 24px;
+      border-left: 1px solid var(--line);
+      background: var(--surface);
+      overflow: auto;
+    }
+
+    .panel h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .panel p {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .component-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .component {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fbfcfe;
+      cursor: pointer;
+    }
+
+    .component:hover,
+    .component.active {
+      border-color: #9dbaf4;
+      background: #eef4ff;
+    }
+
+    .component strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+
+    .component span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .details {
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .details-label {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .details h3 {
+      margin: 8px 0;
+      font-size: 16px;
+    }
+
+    .details ul {
+      margin: 10px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 1180px) {
+      main {
+        grid-template-columns: 190px 1fr;
+      }
+
+      aside {
+        grid-column: 1 / -1;
+        border-top: 1px solid var(--line);
+        border-left: 0;
+      }
+    }
+
+    @media (max-width: 820px) {
+      header {
+        grid-template-columns: 1fr;
+      }
+
+      .badge-row {
+        justify-content: flex-start;
+      }
+
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      nav {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .diagram-shell {
+        height: 620px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Enterprise AgentOps Control Tower</h1>
+      <p class="subtitle">
+        Interactive architecture map for the Microsoft Agentic AI demo. Use the tabs to move from the full platform view to runtime, governance, and observability flows.
+      </p>
+    </div>
+    <div class="badge-row" aria-label="Architecture tags">
+      <span class="badge">Copilot Studio</span>
+      <span class="badge">Azure Functions</span>
+      <span class="badge">FastMCP</span>
+      <span class="badge">Dataverse</span>
+      <span class="badge">Power BI</span>
+    </div>
+  </header>
+
+  <main>
+    <nav>
+      <p class="nav-title">Views</p>
+      <button class="nav-button active" data-view="overview">Architecture Overview</button>
+      <button class="nav-button" data-view="runtime">Runtime Flow</button>
+      <button class="nav-button" data-view="governance">Governance Loop</button>
+      <button class="nav-button" data-view="observability">Observability Flow</button>
+
+      <div class="stage-list">
+        <p class="nav-title">Demo State</p>
+        <div class="stage"><span class="dot green"></span><span>Core workflow deployed and tested</span></div>
+        <div class="stage"><span class="dot green"></span><span>Copilot Studio agent validated</span></div>
+        <div class="stage"><span class="dot green"></span><span>Power Apps approval console working</span></div>
+        <div class="stage"><span class="dot amber"></span><span>Power BI Operations page started</span></div>
+      </div>
+    </nav>
+
+    <section class="workspace">
+      <div class="toolbar">
+        <h2 class="view-title" id="viewTitle">Architecture Overview</h2>
+        <div class="tool-actions">
+          <button class="icon-button" id="zoomOut" title="Zoom out">-</button>
+          <button class="icon-button" id="resetZoom" title="Reset zoom">1</button>
+          <button class="icon-button" id="zoomIn" title="Zoom in">+</button>
+        </div>
+      </div>
+
+      <div class="diagram-shell">
+        <div class="diagram-canvas" id="panArea">
+          <div class="diagram" id="diagramTarget"></div>
+        </div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="panel">
+        <h2>Component Map</h2>
+        <p>Click a component to see why it exists in the architecture.</p>
+        <div class="component-list" id="componentList"></div>
+        <div class="details" id="componentDetails">
+          <div class="details-label">Selected component</div>
+          <h3>Copilot Studio</h3>
+          <p>Conversational front door for the support operator. It uses tools instead of direct database access.</p>
+          <ul>
+            <li>Lists pending approvals</li>
+            <li>Submits approval decisions</li>
+            <li>Can call the orchestrator through custom connectors</li>
+          </ul>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: false,
+      securityLevel: "loose",
+      theme: "base",
+      themeVariables: {
+        fontFamily: "Segoe UI, Arial, sans-serif",
+        primaryColor: "#eef4ff",
+        primaryTextColor: "#18202b",
+        primaryBorderColor: "#9dbaf4",
+        lineColor: "#667085",
+        secondaryColor: "#ecfdf3",
+        tertiaryColor: "#fff8e6",
+        clusterBkg: "#ffffff",
+        clusterBorder: "#d8dee8"
+      },
+      flowchart: {
+        htmlLabels: true,
+        curve: "basis",
+        padding: 18
+      }
+    });
+
+    const diagrams = {
+      overview: {
+        title: "Architecture Overview",
+        source: `
+flowchart LR
+  user[Business users<br/>Support operator]:::human
+  cs[Copilot Studio<br/>Support Agent]:::surface
+  pa[Power Apps<br/>Approval Console]:::surface
+  pbi[Power BI Desktop<br/>Operations Report]:::surface
+
+  func[Azure Function App<br/>Orchestrator API]:::compute
+  agent[Microsoft Agent Framework<br/>Semantic Kernel comparison agent]:::compute
+  mcp[FastMCP Server<br/>Enterprise tools]:::compute
+
+  dv[(Dataverse<br/>Orders, approvals, agent runs)]:::data
+  search[(Azure AI Search<br/>Knowledge index)]:::data
+  aoai[Azure OpenAI<br/>gpt-5-mini]:::ai
+  gemini[Gemini<br/>comparison provider]:::ai
+  sb[Service Bus<br/>workflow events]:::integration
+  appi[Application Insights<br/>OpenTelemetry spans]:::ops
+
+  user --> cs
+  user --> pa
+  cs -->|custom connector tools| func
+  pa -->|approval decisions| func
+  func --> agent
+  agent --> mcp
+  mcp --> dv
+  mcp --> search
+  agent --> aoai
+  agent -. lab comparison .-> gemini
+  func --> sb
+  mcp --> appi
+  dv --> pbi
+
+  classDef human fill:#f8fafc,stroke:#98a2b3,color:#18202b
+  classDef surface fill:#eef4ff,stroke:#2563eb,color:#18202b
+  classDef compute fill:#ecfdf3,stroke:#168a5b,color:#18202b
+  classDef data fill:#fff8e6,stroke:#b7791f,color:#18202b
+  classDef ai fill:#f4f3ff,stroke:#7a5af8,color:#18202b
+  classDef integration fill:#fdf2fa,stroke:#c11574,color:#18202b
+  classDef ops fill:#fef3f2,stroke:#b42318,color:#18202b
+        `
+      },
+      runtime: {
+        title: "Runtime Flow",
+        source: `
+sequenceDiagram
+  autonumber
+  participant User as Support operator
+  participant CS as Copilot Studio
+  participant Func as Azure Function Orchestrator
+  participant Agent as Agent workflow
+  participant MCP as FastMCP tools
+  participant DV as Dataverse
+  participant Search as Azure AI Search
+  participant AOAI as Azure OpenAI
+  participant AppI as Application Insights
+
+  User->>CS: Ask about customer/order risk
+  CS->>Func: Invoke custom connector action
+  Func->>Agent: Start WebshopOrderSupport workflow
+  Agent->>MCP: Get customer, order, shipment, refund data
+  MCP->>DV: Query business records
+  Agent->>MCP: Search policy knowledge
+  MCP->>Search: Retrieve grounded policy context
+  Agent->>AOAI: Draft risk summary and next action
+  Agent->>MCP: Create approval and log agent run
+  MCP->>DV: Store approval and AgentRun
+  MCP->>AppI: Emit mcp.log_agent_run span
+  Func-->>CS: Return answer and approval status
+  CS-->>User: Show summary and recommended next step
+        `
+      },
+      governance: {
+        title: "Governance Loop",
+        source: `
+flowchart LR
+  subgraph detect[Detection]
+    issue[Delayed shipment<br/>pending refund]:::risk
+    policy[Policy evidence<br/>Azure AI Search]:::policy
+  end
+
+  subgraph guard[Guardrail]
+    rule{High risk?}:::decision
+    block[Do not auto-compensate]:::risk
+  end
+
+  subgraph approval[Human approval]
+    request[Create approval<br/>Dataverse]:::store
+    review[Manager reviews<br/>Power Apps]:::surface
+    decision[Approve or reject<br/>with comment]:::action
+  end
+
+  subgraph record[Audit and status]
+    update[Update approval status<br/>Dataverse]:::store
+    chat[Copilot reports<br/>current status]:::surface
+    report[Power BI reads<br/>approval/run data]:::surface
+  end
+
+  issue --> policy --> rule
+  rule -->|Yes| block --> request --> review --> decision --> update
+  rule -->|No| update
+  update --> chat
+  update --> report
+
+  classDef risk fill:#fef3f2,stroke:#b42318,color:#18202b
+  classDef policy fill:#fff8e6,stroke:#b7791f,color:#18202b
+  classDef decision fill:#f8fafc,stroke:#475467,color:#18202b
+  classDef store fill:#ecfdf3,stroke:#168a5b,color:#18202b
+  classDef surface fill:#eef4ff,stroke:#2563eb,color:#18202b
+  classDef action fill:#f4f3ff,stroke:#7a5af8,color:#18202b
+        `
+      },
+      observability: {
+        title: "Observability Flow",
+        source: `
+flowchart LR
+  run[Agent run completes]:::compute
+  logtool[MCP log_agent_run tool]:::compute
+  cost[Cost calculation<br/>tokens and model]:::ops
+  span[OpenTelemetry span<br/>mcp.log_agent_run]:::ops
+  appi[Application Insights<br/>operational troubleshooting]:::ops
+  dv[(Dataverse cr_agentrun<br/>business audit)]:::data
+  pbi[Power BI Operations page<br/>business reporting]:::surface
+
+  run --> logtool
+  logtool --> cost
+  logtool --> span
+  span --> appi
+  logtool --> dv
+  dv --> pbi
+
+  classDef compute fill:#ecfdf3,stroke:#168a5b,color:#18202b
+  classDef ops fill:#fef3f2,stroke:#b42318,color:#18202b
+  classDef data fill:#fff8e6,stroke:#b7791f,color:#18202b
+  classDef surface fill:#eef4ff,stroke:#2563eb,color:#18202b
+        `
+      }
+    };
+
+    const components = [
+      {
+        name: "Copilot Studio",
+        type: "Agent surface",
+        description: "Conversational front door for support operators. It calls tools and keeps the user experience natural.",
+        bullets: ["Lists pending approvals", "Submits approval decisions", "Can invoke orchestrator actions"]
+      },
+      {
+        name: "Power Apps",
+        type: "Approval console",
+        description: "Deterministic human-in-the-loop UI for managers who need to approve or reject compensation decisions.",
+        bullets: ["Shows pending approvals", "Captures comments", "Calls SubmitApprovalDecision"]
+      },
+      {
+        name: "Azure Function App",
+        type: "Orchestrator API",
+        description: "Runtime API that receives tool calls, starts workflows, updates thread state, and coordinates services.",
+        bullets: ["HTTP endpoints", "Python Azure Functions", "Deployed to Azure"]
+      },
+      {
+        name: "FastMCP Server",
+        type: "Enterprise tool layer",
+        description: "Typed tool facade for Dataverse, Search, approvals, cost and observability operations.",
+        bullets: ["Prevents direct database access from agents", "Supports mock and Dataverse modes", "Centralizes tool contracts"]
+      },
+      {
+        name: "Dataverse",
+        type: "System of record",
+        description: "Stores customer/order records, approval requests, thread state and agent run audit rows.",
+        bullets: ["Approval audit", "AgentRun reporting", "Power Platform native data source"]
+      },
+      {
+        name: "Azure AI Search",
+        type: "Knowledge retrieval",
+        description: "Provides grounded policy and support knowledge used by the workflow before recommendations are made.",
+        bullets: ["Policy lookup", "Secure RAG path", "Knowledge source for decisions"]
+      },
+      {
+        name: "Azure OpenAI",
+        type: "Primary LLM provider",
+        description: "Primary Microsoft-aligned model provider for the demo runtime.",
+        bullets: ["gpt-5-mini deployment", "Enterprise AI positioning", "Config-driven provider selection"]
+      },
+      {
+        name: "Application Insights",
+        type: "Operational telemetry",
+        description: "Receives OpenTelemetry spans so failures, latency and run metadata can be investigated operationally.",
+        bullets: ["mcp.log_agent_run spans", "Kusto queries", "Troubleshooting view"]
+      },
+      {
+        name: "Power BI",
+        type: "Business reporting",
+        description: "Reads Dataverse AgentRun records and presents the business view of latency, cost, risk and quality.",
+        bullets: ["Operations page", "Dataverse connector", "Local Desktop report"]
+      }
+    ];
+
+    let currentScale = 0.7;
+
+    function applyDiagramScale() {
+      const target = document.getElementById("diagramTarget");
+      const svg = target.querySelector("svg");
+      if (!svg) {
+        return;
+      }
+      svg.style.width = `${currentScale * 100}%`;
+      svg.style.minWidth = "520px";
+      svg.style.maxWidth = "none";
+    }
+
+    function fitDiagramToViewport() {
+      currentScale = 0.7;
+      applyDiagramScale();
+      const area = document.getElementById("panArea");
+      area.scrollLeft = Math.max((area.scrollWidth - area.clientWidth) / 2, 0);
+      area.scrollTop = Math.max((area.scrollHeight - area.clientHeight) / 2, 0);
+    }
+
+    async function renderDiagram(viewName) {
+      const view = diagrams[viewName];
+      $("#viewTitle").text(view.title);
+      const target = document.getElementById("diagramTarget");
+      target.innerHTML = "";
+
+      const renderId = "diagram-" + viewName + "-" + Date.now();
+      const rendered = await mermaid.render(renderId, view.source);
+      target.innerHTML = rendered.svg;
+
+      requestAnimationFrame(fitDiagramToViewport);
+    }
+
+    function renderComponents() {
+      const list = $("#componentList");
+      list.empty();
+      components.forEach((component, index) => {
+        const item = $(`
+          <div class="component" data-index="${index}">
+            <strong>${component.name}</strong>
+            <span>${component.type}</span>
+          </div>
+        `);
+        list.append(item);
+      });
+      $(".component").first().addClass("active");
+    }
+
+    function showComponent(index) {
+      const component = components[index];
+      $(".component").removeClass("active");
+      $(`.component[data-index="${index}"]`).addClass("active");
+      $("#componentDetails").html(`
+        <div class="details-label">${component.type}</div>
+        <h3>${component.name}</h3>
+        <p>${component.description}</p>
+        <ul>${component.bullets.map((item) => `<li>${item}</li>`).join("")}</ul>
+      `);
+    }
+
+    $(async function () {
+      renderComponents();
+      await renderDiagram("overview");
+
+      $(".nav-button").on("click", async function () {
+        $(".nav-button").removeClass("active");
+        $(this).addClass("active");
+        await renderDiagram($(this).data("view"));
+      });
+
+      $("#componentList").on("click", ".component", function () {
+        showComponent($(this).data("index"));
+      });
+
+      $("#zoomIn").on("click", function () {
+        currentScale = Math.min(currentScale + 0.1, 1.8);
+        applyDiagramScale();
+      });
+
+      $("#zoomOut").on("click", function () {
+        currentScale = Math.max(currentScale - 0.1, 0.25);
+        applyDiagramScale();
+      });
+
+      $("#resetZoom").on("click", function () {
+        fitDiagramToViewport();
+      });
+    });
+  </script>
+</body>
+</html>

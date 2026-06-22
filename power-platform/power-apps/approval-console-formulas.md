@@ -109,17 +109,21 @@ If(
 
 ## Approve Button.OnSelect
 
+Power Apps expands the OpenAPI body schema into required parameters plus an optional record.
+Use this connector signature:
+
+```powerfx
+SubmitApprovalDecision(approvalId, decision, approvedBy, {comment: commentText})
+```
+
 ```powerfx
 Set(
     varDecisionResult,
     AgentOpsApprovalConsole.SubmitApprovalDecision(
-        {
-            approvalId: varSelectedApproval.approvalId,
-            threadId: varSelectedApproval.threadId,
-            decision: "Approved",
-            approvedBy: varApproverEmail,
-            comment: txtDecisionComment.Text
-        }
+        varSelectedApproval.approvalId,
+        "Approved",
+        varApproverEmail,
+        {comment: txtDecisionComment.Text}
     )
 );
 Notify(
@@ -130,8 +134,8 @@ ClearCollect(
     colPendingApprovals,
     AgentOpsApprovalConsole.ListPendingApprovals().approvals
 );
-Set(varSelectedApproval, First(colPendingApprovals));
-Reset(txtDecisionComment)
+Reset(txtDecisionComment);
+Set(varSelectedApproval, Blank())
 ```
 
 ## Reject Button.OnSelect
@@ -140,13 +144,10 @@ Reset(txtDecisionComment)
 Set(
     varDecisionResult,
     AgentOpsApprovalConsole.SubmitApprovalDecision(
-        {
-            approvalId: varSelectedApproval.approvalId,
-            threadId: varSelectedApproval.threadId,
-            decision: "Rejected",
-            approvedBy: varApproverEmail,
-            comment: txtDecisionComment.Text
-        }
+        varSelectedApproval.approvalId,
+        "Rejected",
+        varApproverEmail,
+        {comment: txtDecisionComment.Text}
     )
 );
 Notify(
@@ -157,8 +158,8 @@ ClearCollect(
     colPendingApprovals,
     AgentOpsApprovalConsole.ListPendingApprovals().approvals
 );
-Set(varSelectedApproval, First(colPendingApprovals));
-Reset(txtDecisionComment)
+Reset(txtDecisionComment);
+Set(varSelectedApproval, Blank())
 ```
 
 ## Visual Structure

@@ -124,6 +124,19 @@ Preferred data approach:
 
 This keeps thread-state mutation inside the Orchestrator and avoids teaching Power Apps how to update Azure Table Storage.
 
+Power Apps may expose the `SubmitApprovalDecision` OpenAPI body as required parameters plus an optional record:
+
+```powerfx
+AgentOpsApprovalConsole.SubmitApprovalDecision(
+    varSelectedApproval.approvalId,
+    "Approved",
+    User().Email,
+    {comment: txtDecisionComment.Text}
+)
+```
+
+Use the formulas in [power-platform/power-apps/approval-console-formulas.md](../power-platform/power-apps/approval-console-formulas.md) as the current source of truth for the Canvas App.
+
 ## Local Test
 
 Start the Function app:

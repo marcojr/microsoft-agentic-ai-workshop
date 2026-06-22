@@ -1,6 +1,6 @@
 from typing import Any
 
-from agent_framework.openai import OpenAIChatCompletionClient
+from agent_framework.azure import AzureOpenAIChatClient
 from semantic_kernel import Kernel
 from semantic_kernel.connectors.ai.open_ai import (
     AzureChatCompletion,
@@ -29,12 +29,12 @@ class AzureOpenAIAgentRuntime:
         if not self.deployment:
             raise ValueError("AZURE_OPENAI_DEPLOYMENT_NAME is required.")
 
-    def build_agent_framework_client(self) -> OpenAIChatCompletionClient:
+    def build_agent_framework_client(self) -> AzureOpenAIChatClient:
         # Step 3: Build the Microsoft Agent Framework client.
-        return OpenAIChatCompletionClient(
-            model=self.deployment,
+        return AzureOpenAIChatClient(
+            deployment_name=self.deployment,
             api_key=self.api_key,
-            azure_endpoint=self.endpoint,
+            endpoint=self.endpoint,
             api_version=self.api_version,
         )
 

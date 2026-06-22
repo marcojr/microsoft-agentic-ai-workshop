@@ -4,16 +4,16 @@
 
 Import `agentops-approval-console.openapi.json` as a Power Apps custom connector.
 
-Before importing, replace:
+The OpenAPI file is currently pointed at:
 
 ```text
-REPLACE_WITH_FUNCTION_HOST
+func-agentops-dev-002.azurewebsites.net
 ```
 
-with the deployed Azure Function host, for example:
+If the Function App is recreated with a different name, update the OpenAPI `host` value before importing.
 
 ```text
-func-agentops-dev-001.azurewebsites.net
+"host": "your-function-app.azurewebsites.net"
 ```
 
 For a deployed Function App, configure the connector's API key parameter as:

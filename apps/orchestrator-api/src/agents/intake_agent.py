@@ -1,6 +1,6 @@
 import json
 
-from agent_framework import Agent
+from agent_framework import ChatAgent
 from pydantic import BaseModel
 
 from src.shared.mcp_client import MCPClient
@@ -32,10 +32,11 @@ class IntakeAgent:
         self.client = runtime.build_agent_framework_client()
 
         # Step 3: Build the intake agent with strict JSON-only instructions.
-        self.agent = Agent(
-            client=self.client,
+        self.agent = ChatAgent(
+            chat_client=self.client,
             name="IntakeAgent",
             instructions=self._build_instructions(self.allowed_tool_names),
+            response_format=IntakeClassificationContract,
         )
 
     @staticmethod
@@ -69,10 +70,7 @@ Do not return business system names, categories, descriptions, or paraphrases.
             raise ValueError("user_message is required.")
 
         # Step 2: Run the Microsoft Agent Framework agent with a typed output contract.
-        response = await self.agent.run(
-            user_message,
-            options={"response_format": IntakeClassificationContract},
-        )
+        response = await self.agent.run(user_message)
 
         # Step 3: Extract the text payload returned by the agent runtime.
         content = response.text.strip()

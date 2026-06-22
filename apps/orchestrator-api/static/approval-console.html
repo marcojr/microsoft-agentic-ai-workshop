@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AgentOps Approval Console</title>
+  <style>
+    body { margin: 0; font-family: Segoe UI, Arial, sans-serif; background: #f6f7f9; color: #15181e; }
+    header { height: 58px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; background: white; border-bottom: 1px solid #d8dee8; }
+    main { display: grid; grid-template-columns: 380px 1fr; gap: 16px; padding: 16px; }
+    section { background: white; border: 1px solid #d8dee8; border-radius: 8px; min-height: 420px; }
+    button, input, textarea { font: inherit; }
+    button { border: 0; border-radius: 6px; padding: 9px 12px; cursor: pointer; font-weight: 650; }
+    .refresh { color: #2563eb; background: #eef4ff; }
+    .approve { color: white; background: #16803c; }
+    .reject { color: white; background: #c73535; }
+    .row { width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 12px; text-align: left; background: white; border-bottom: 1px solid #edf0f5; }
+    .row.active { background: #f3f7ff; }
+    .muted { color: #647084; font-size: 13px; }
+    .pill { border-radius: 99px; padding: 4px 8px; background: #fde7e7; color: #831b1b; font-size: 12px; font-weight: 700; }
+    .detail { padding: 18px; }
+    .actions { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; padding: 14px; border-top: 1px solid #d8dee8; }
+    textarea { min-height: 42px; padding: 8px; border: 1px solid #d8dee8; border-radius: 6px; }
+    pre { white-space: pre-wrap; background: #111827; color: white; padding: 12px; border-radius: 8px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>AgentOps Approval Console</strong>
+    <div>
+      <input id="code" placeholder="Function key">
+      <input id="approver" value="manager@contoso.com">
+      <button class="refresh" onclick="loadApprovals()">Refresh</button>
+    </div>
+  </header>
+  <main>
+    <section id="list"></section>
+    <section>
+      <div id="detail" class="detail">No approval selected.</div>
+      <div class="actions">
+        <textarea id="comment" placeholder="Decision comment"></textarea>
+        <button class="approve" onclick="decide('Approved')">Approve</button>
+        <button class="reject" onclick="decide('Rejected')">Reject</button>
+      </div>
+    </section>
+  </main>
+  <script>
+    let approvals = [];
+    let selected = null;
+
+    function api(path) {
+      const code = document.getElementById("code").value.trim();
+      return `/api${path}${code ? `?code=${encodeURIComponent(code)}` : ""}`;
+    }
+
+    function pick(id) {
+      selected = approvals.find(item => item.approvalId === id) || null;
+      render();
+    }
+
+    function render() {
+      document.getElementById("list").innerHTML = approvals.map(item => `
+        <button class="row ${selected && selected.approvalId === item.approvalId ? "active" : ""}" onclick="pick('${item.approvalId}')">
+          <span><strong>${item.orderNumber || item.relatedRecordId || item.approvalId}</strong><br><span class="muted">${item.customerName || ""} ${item.customerEmail || ""}</span></span>
+          <span class="pill">${item.riskLevel || "Risk"}</span>
+        </button>
+      `).join("") || "<div class='detail'>No pending approvals.</div>";
+
+      document.getElementById("detail").innerHTML = selected
+        ? `<h2>${selected.orderNumber || selected.approvalId}</h2><p>${selected.reason || ""}</p><pre>${JSON.stringify(selected, null, 2)}</pre>`
+        : "No approval selected.";
+    }
+
+    async function loadApprovals() {
+      const response = await fetch(api("/approvals/pending"));
+      const payload = await response.json();
+      if (!response.ok) throw new Error(JSON.stringify(payload, null, 2));
+      approvals = payload.approvals || [];
+      selected = approvals[0] || null;
+      render();
+    }
+
+    async function decide(decision) {
+      if (!selected) return;
+      const response = await fetch(api("/approvals/decision"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          approvalId: selected.approvalId,
+          threadId: selected.threadId,
+          decision,
+          approvedBy: document.getElementById("approver").value,
+          comment: document.getElementById("comment").value || null
+        })
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(JSON.stringify(payload, null, 2));
+      await loadApprovals();
+    }
+  </script>
+</body>
+</html>

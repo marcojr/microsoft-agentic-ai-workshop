@@ -5,7 +5,7 @@
     "description": "Custom connector for the Enterprise AgentOps approval console. Power Apps uses this connector to list pending human approvals and submit approve/reject decisions through the Orchestrator API.",
     "version": "1.0.0"
   },
-  "host": "REPLACE_WITH_FUNCTION_HOST",
+  "host": "func-agentops-dev-002.azurewebsites.net",
   "basePath": "/api",
   "schemes": [
     "https"

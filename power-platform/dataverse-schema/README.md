@@ -15,6 +15,7 @@ Files:
 
 Scripts:
 
+- `../scripts/Ensure-AgentOpsDataverseSolution.ps1` - creates the project Publisher/Solution and adds the custom tables to it
 - `../scripts/Deploy-AgentOpsDataverseSchema.ps1` - creates missing tables and columns
 - `../scripts/Clear-AgentOpsDataverseSeed.ps1` - removes the project seed data from standard `accounts` / `contacts` and custom `cr_*` tables
 - `../scripts/Seed-AgentOpsDataverseData.ps1` - seeds standard `accounts` / `contacts` and the custom `cr_*` data from the mock JSON files
@@ -22,7 +23,8 @@ Scripts:
 Run from repo root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\power-platform\scripts\Deploy-AgentOpsDataverseSchema.ps1
+powershell -ExecutionPolicy Bypass -File .\power-platform\scripts\Ensure-AgentOpsDataverseSolution.ps1
+powershell -ExecutionPolicy Bypass -File .\power-platform\scripts\Deploy-AgentOpsDataverseSchema.ps1 -SolutionUniqueName agentops_workshop
 powershell -ExecutionPolicy Bypass -File .\power-platform\scripts\Clear-AgentOpsDataverseSeed.ps1
 powershell -ExecutionPolicy Bypass -File .\power-platform\scripts\Seed-AgentOpsDataverseData.ps1
 ```
@@ -30,8 +32,14 @@ powershell -ExecutionPolicy Bypass -File .\power-platform\scripts\Seed-AgentOpsD
 The scripts read Dataverse credentials from:
 
 ```text
-mcp-server/.env
+.env at the repository root, with mcp-server/.env kept as a legacy fallback
 ```
+
+Current unmanaged solution:
+
+- Friendly name: `AgentOps Workshop`
+- Unique name: `agentops_workshop`
+- Publisher unique name: `agentops_workshop_publisher`
 
 Observed Dataverse naming nuance:
 

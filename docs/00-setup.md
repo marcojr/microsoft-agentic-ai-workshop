@@ -18,6 +18,7 @@ Everything you need to install before starting development on the Enterprise Age
 | IaC | Pulumi CLI | Yes |
 | Power Platform | Power Platform CLI (pac) | Yes |
 | Editor | VS Code | Yes |
+| Reporting | Power BI Desktop | Recommended |
 | Storage emulator | Azurite | Yes |
 | Containers | Docker Desktop | Optional |
 | AI | OpenAI SDK + Codex CLI | Yes |
@@ -135,6 +136,26 @@ ms-CopilotStudio.vscode-copilotstudio
 > `ms-powerplatform.vscode-powerplatform` — Power Platform Tools, includes Microsoft Copilot Studio authoring support directly in VS Code.
 >
 > `ms-CopilotStudio.vscode-copilotstudio` — dedicated Microsoft Copilot Studio extension for cloning, editing, diffing and updating Copilot Studio agents directly from VS Code.
+
+---
+
+## Group 2.5 — Reporting
+
+### Power BI Desktop
+
+Required for the local observability and cost engineering report in Stage 10.
+
+```powershell
+winget install Microsoft.PowerBI
+```
+
+Verify by opening:
+
+```text
+Power BI Desktop
+```
+
+Power BI Service publishing is optional. The workshop report can be built and demonstrated locally from Power BI Desktop.
 
 ---
 

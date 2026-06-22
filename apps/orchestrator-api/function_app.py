@@ -1,12 +1,10 @@
 import json
+import traceback
 from pathlib import Path
 
 import azure.functions as func
 
 app = func.FunctionApp()
-
-from src.approval_console import decide_approval, list_pending_approvals
-from src.webshop_order_support import handle_webshop_order_support
 
 
 def _json_response(result: dict, status_code: int) -> func.HttpResponse:
@@ -17,6 +15,17 @@ def _json_response(result: dict, status_code: int) -> func.HttpResponse:
     )
 
 
+def _exception_response(exc: Exception) -> func.HttpResponse:
+    return _json_response(
+        {
+            "error": exc.__class__.__name__,
+            "message": str(exc),
+            "traceback": traceback.format_exc(),
+        },
+        500,
+    )
+
+
 @app.route(
     route="agents/webshop/order-support",
     methods=["POST"],
@@ -24,16 +33,21 @@ def _json_response(result: dict, status_code: int) -> func.HttpResponse:
 )
 def webshop_order_support(req: func.HttpRequest) -> func.HttpResponse:
     try:
-        body = req.get_json()
-    except ValueError:
-        return func.HttpResponse(
-            json.dumps({"error": "Invalid JSON"}),
-            mimetype="application/json",
-            status_code=400,
-        )
+        from src.webshop_order_support import handle_webshop_order_support
 
-    result, status_code = handle_webshop_order_support(body)
-    return _json_response(result, status_code)
+        try:
+            body = req.get_json()
+        except ValueError:
+            return func.HttpResponse(
+                json.dumps({"error": "Invalid JSON"}),
+                mimetype="application/json",
+                status_code=400,
+            )
+
+        result, status_code = handle_webshop_order_support(body)
+        return _json_response(result, status_code)
+    except Exception as exc:
+        return _exception_response(exc)
 
 
 @app.route(
@@ -42,7 +56,7 @@ def webshop_order_support(req: func.HttpRequest) -> func.HttpResponse:
     auth_level=func.AuthLevel.ANONYMOUS,
 )
 def approval_console(req: func.HttpRequest) -> func.HttpResponse:
-    html_path = Path(__file__).resolve().parents[1] / "frontend-demo" / "approval-console.html"
+    html_path = Path(__file__).resolve().parent / "static" / "approval-console.html"
     if not html_path.exists():
         return func.HttpResponse("Approval console not found.", status_code=404)
 
@@ -59,8 +73,13 @@ def approval_console(req: func.HttpRequest) -> func.HttpResponse:
     auth_level=func.AuthLevel.FUNCTION,
 )
 def approvals_pending(req: func.HttpRequest) -> func.HttpResponse:
-    result, status_code = list_pending_approvals()
-    return _json_response(result, status_code)
+    try:
+        from src.approval_console import list_pending_approvals
+
+        result, status_code = list_pending_approvals()
+        return _json_response(result, status_code)
+    except Exception as exc:
+        return _exception_response(exc)
 
 
 @app.route(
@@ -70,16 +89,21 @@ def approvals_pending(req: func.HttpRequest) -> func.HttpResponse:
 )
 def approvals_decision(req: func.HttpRequest) -> func.HttpResponse:
     try:
-        body = req.get_json()
-    except ValueError:
-        return func.HttpResponse(
-            json.dumps({"error": "Invalid JSON"}),
-            mimetype="application/json",
-            status_code=400,
-        )
+        from src.approval_console import decide_approval
 
-    result, status_code = decide_approval(body)
-    return _json_response(result, status_code)
+        try:
+            body = req.get_json()
+        except ValueError:
+            return func.HttpResponse(
+                json.dumps({"error": "Invalid JSON"}),
+                mimetype="application/json",
+                status_code=400,
+            )
+
+        result, status_code = decide_approval(body)
+        return _json_response(result, status_code)
+    except Exception as exc:
+        return _exception_response(exc)
 
 
 @app.route(

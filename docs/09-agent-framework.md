@@ -364,9 +364,60 @@ Write the summary.
 > **VS Code extension:** Install `ms-powerplatform.vscode-powerplatform` (Power Platform Tools) to author and inspect Copilot Studio agents without leaving VS Code.
 
 1. Go to https://copilotstudio.microsoft.com
-2. **Create** → **New agent**
-3. Name: `Enterprise AgentOps Assistant`
-4. Description: _Helps business users query customer orders, check SLA status, find policy information and request approvals._
+2. **Agents** -> **New agent**
+3. Name: `AgentOps Support Agent`
+4. Description: _Enterprise support operations agent for approval review, policy lookup and agentic workflow coordination._
+5. Instructions:
+
+```text
+You are an enterprise support operations agent. Help users review pending approval requests,
+understand customer/order risk context, and decide whether approvals should be accepted or
+rejected. Use available tools when approval data is needed. Be concise and ask for
+clarification when required.
+```
+
+The current validated Copilot Studio integration uses **Tools** as the main extension point.
+
+### Tools: Approval Console Connector
+
+Add the existing Power Platform Custom Connector as tools:
+
+```text
+Agent -> Tools -> Add a tool -> Connector -> AgentOps Approval Console
+```
+
+Add these operations:
+
+- `ListPendingApprovals`
+- `SubmitApprovalDecision`
+
+For `SubmitApprovalDecision`, configure input descriptions:
+
+```text
+approvalId: The approval request ID to approve or reject. Example: apr-4874e82a.
+decision: The decision to apply. Must be exactly Approved or Rejected.
+approvedBy: Email address of the human approver. Use the current user's email when available.
+comment: Short explanation for the approval or rejection decision.
+threadId: Workflow thread ID linked to the approval. If unknown, use the threadId from the approval request.
+```
+
+Keep inputs filled by AI for the first workshop version.
+
+If the tool settings expose credential behavior, use maker-provided credentials for the workshop connection.
+
+### Verified Test Prompts
+
+Approval list:
+
+```text
+List the current pending approvals and summarize the risk.
+```
+
+Approval decision:
+
+```text
+Approve approval apr-4874e82a because the delayed shipment compensation is valid and the refund amount is within policy.
+```
 
 ### Topic: Order Support
 
@@ -387,10 +438,9 @@ Flow:
 
 ### HTTP Action
 
-- Method: POST
-- URL: `https://func-agentops-dev.azurewebsites.net/api/webshop-order-support`
-- Auth: API key (via connection reference)
-- Input: `{ "customerEmail": "{customerEmail}" }`
+- Status: deferred.
+- The first Copilot Studio integration uses the Power Platform Custom Connector tools above.
+- A later endpoint/tool can expose `POST /api/agents/webshop/order-support` directly for order-support conversations.
 
 ---
 

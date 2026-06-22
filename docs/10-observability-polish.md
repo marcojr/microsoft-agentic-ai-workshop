@@ -1,18 +1,17 @@
-# Stage 10: Observability, Cost Dashboard and Demo Polish (Day 10)
+# Stage 10: Observability, Power BI and Demo Polish (Day 10)
 
-Wire Application Insights telemetry, build the Power BI cost engineering dashboard, run the 7-minute demo end-to-end, and produce the architecture diagram.
+Wire Application Insights telemetry, keep one working Power BI Operations page, write the final demo walkthrough, and produce the architecture diagram.
 
 ---
 
 ## Day 10 Deliverables
 
-- [ ] `telemetry.py` sending traces to Application Insights
-- [ ] 25 seeded agent runs for dashboard demo
-- [ ] Power BI report connected to Dataverse `cr_agentrun` table
-- [ ] 3 dashboard pages: Operations, Cost Engineering, Governance
-- [ ] 7-minute demo walkthrough completed end-to-end
-- [ ] Architecture diagram produced
-- [ ] 8 interview talking points documented
+- [x] `telemetry.py` sending traces to Application Insights when `APPLICATIONINSIGHTS_CONNECTION_STRING` is configured
+- [x] Power BI report connected to Dataverse `cr_agentrun` table
+- [x] Power BI Operations page started and usable for the demo
+- [x] Final walkthrough documented
+- [x] Architecture diagram produced
+- [x] Final interview/demo talking points documented
 
 ---
 
@@ -22,22 +21,28 @@ Wire Application Insights telemetry, build the Power BI cost engineering dashboa
 
 ```python
 import os
-from opentelemetry import trace
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
+from opentelemetry import trace
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
 
-_provider = None
+_CONFIGURED = False
+_PROVIDER = None
 
-def init_telemetry():
-    global _provider
+def init_telemetry() -> bool:
+    global _CONFIGURED, _PROVIDER
+    if _CONFIGURED:
+        return True
     conn = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
-    if not conn or _provider:
-        return
+    if not conn:
+        return False
     exporter = AzureMonitorTraceExporter(connection_string=conn)
-    _provider = TracerProvider()
-    _provider.add_span_processor(BatchSpanProcessor(exporter))
-    trace.set_tracer_provider(_provider)
+    _PROVIDER = TracerProvider(resource=Resource.create({"service.name": "enterprise-agentops-mcp"}))
+    _PROVIDER.add_span_processor(SimpleSpanProcessor(exporter))
+    trace.set_tracer_provider(_PROVIDER)
+    _CONFIGURED = True
+    return True
 
 def get_tracer():
     init_telemetry()
@@ -72,60 +77,55 @@ uv add azure-monitor-opentelemetry-exporter opentelemetry-sdk
 
 ---
 
-## Seed 25 Agent Runs
+## Demo Data
 
-**File:** `data/seed-scripts/seed_agent_runs.py`
+There is no fixed seeded-run milestone anymore. The report only needs enough real `cr_agentrun` rows to prove that telemetry, Dataverse logging and Power BI reporting work.
 
-```python
-import sys, random
-
-sys.path.insert(0, "mcp-server/src")
-from enterprise_agentops_mcp.tools.observability import log_agent_run
-
-workflows = ["WebshopOrderSupport", "CustomerCaseIntelligence"]
-intents = ["SummariseLatestOrderIssue", "CheckDeliveryStatus", "EscalateCase", "RequestRefund"]
-models = [
-    ("gpt-5-mini", "Azure OpenAI"),
-    ("gemini-3.5-flash", "Gemini")
-]
-tools_pool = ["get_customer_by_email", "get_latest_order", "get_shipment_status",
-              "get_returns_for_order", "search_knowledge_articles", "evaluate_response"]
-
-for i in range(25):
-    model, vendor = random.choice(models)
-    log_agent_run(
-        workflow_name=random.choice(workflows),
-        intent=random.choice(intents),
-        model_used=model, vendor=vendor,
-        input_tokens=random.randint(800, 3000),
-        output_tokens=random.randint(200, 800),
-        latency_ms=random.randint(800, 3500),
-        tools_called=random.sample(tools_pool, k=random.randint(3, 6)),
-        requires_approval=random.random() > 0.7,
-        risk_score=round(random.uniform(0.1, 0.9), 2),
-        quality_score=round(random.uniform(0.6, 0.98), 2),
-        groundedness_score=round(random.uniform(0.55, 0.98), 2)
-    )
-
-print("25 agent runs seeded.")
-```
-
-```bash
-uv run python data/seed-scripts/seed_agent_runs.py
-```
+More runs can be generated through the real workflow endpoint whenever a richer dashboard is useful.
 
 ---
 
-## Power BI Dashboard
+## Power BI Desktop Report
+
+The primary workshop reporting path is local Power BI Desktop.
+
+Publishing to the Power BI Service is optional and can be added later if a Power BI Pro, Premium Per User, or Fabric/Premium capacity is available.
+
+Report build guide:
+
+```text
+dashboards/powerbi/README.md
+```
 
 ### Data Source
 
-Connect Power BI Desktop to Dataverse (or import `agent_runs.json` for local demo):
+Connect Power BI Desktop to Dataverse:
 
 1. **Get Data** → **Dataverse** → connect to your environment → select `cr_agentrun`
 
-Or for local demo:
+Offline-only fallback:
+
 1. **Get Data** → **JSON** → select `mcp-server/src/enterprise_agentops_mcp/data/agent_runs.json`
+
+Use Dataverse for the real case walkthrough.
+
+Current checkpoint:
+
+- Power BI Desktop installed.
+- Dataverse connector authenticated.
+- `cr_agentrun` loaded.
+- Operations page created with:
+  - Total Runs card
+  - Estimated Cost card
+  - Average Latency card
+  - Runs by Workflow donut chart
+  - Agent runs table
+
+Remaining Power BI work:
+
+- Save the report as `dashboards/powerbi/agentops-observability.pbix`.
+- Generate more real agent runs only if the demo needs richer data.
+- Cost Engineering and Governance pages are optional extensions, not core completion criteria.
 
 ### Page 1: Operations Overview
 
@@ -138,7 +138,7 @@ Or for local demo:
 | Donut — By Workflow | workflowName, COUNT |
 | Bar — Avg Quality Score by Workflow | workflowName, AVG(qualityScore) |
 
-### Page 2: Cost Engineering
+### Optional Page 2: Cost Engineering
 
 | Visual | Fields |
 |---|---|
@@ -149,7 +149,7 @@ Or for local demo:
 | Scatter — Latency vs Cost | latencyMs, estimatedCost, workflowName |
 | Table — Top 10 Runs by Cost | runId, modelUsed, inputTokens, outputTokens, estimatedCost |
 
-### Page 3: Governance and Quality
+### Optional Page 3: Governance and Quality
 
 | Visual | Fields |
 |---|---|
@@ -161,118 +161,36 @@ Or for local demo:
 
 ---
 
-## 7-Minute Demo Script
+## Final Walkthrough Script
 
-### Minute 0:00 — Scene Setting (30 sec)
+The final walkthrough is now documented in:
 
-> "This is the Enterprise AgentOps Control Tower — a Microsoft reference architecture for governed agentic AI. I'll show you a webshop order support scenario with real AI orchestration, human-in-the-loop approval, and live cost tracking."
+```text
+docs/14-final-walkthrough.md
+```
 
-### Minute 0:30 — Copilot Studio (1:30)
-
-Open Copilot Studio → Enterprise AgentOps Assistant → Test Chat.
-
-Type: **"Find the latest order situation for john.smith@contoso.com"**
-
-Show:
-- Agent calls the HTTP action
-- Orchestrator API triggers
-- JSON response appears in chat
-- Summary shown with delivery delay, refund pending, approval required
-
-> "Notice the agent detected a high-risk situation — a delayed shipment with a pending refund — and automatically created an approval request without revealing sensitive compensation details to the customer."
-
-### Minute 2:00 — MCP Server (1:00)
-
-Switch to VS Code → show `mcp-server/src/enterprise_agentops_mcp/tools/`
-
-> "All 18 tools are exposed through a FastMCP server. These are governed enterprise tools — each one typed, documented and observable. The agent never calls Dataverse directly."
-
-### Minute 3:00 — Agent Pipeline (1:30)
-
-Open `agents/pipelines/webshop_pipeline.py`
-
-> "In Stage 9 we move the single-step orchestrator toward Microsoft Agent Framework. Intake, Data, Governance and Critic become modern framework agents. The Draft Agent intentionally stays in Semantic Kernel so we can compare the older SDK style with the newer Agent Framework direction."
-
-Switch provider: change `provider="azure_openai"` to `provider="gemini"` in the lab path, then re-run and compare the output.
-
-> "Provider switching is configuration-driven. The enterprise runtime path uses Azure OpenAI with `gpt-5-mini` as the primary provider, with Gemini available for comparison and lab use."
-
-### Minute 4:30 — Governance and Approval (1:00)
-
-Show Power Apps Approval Console → pending approval list → manager reviews the request → approves.
-
-> "Compensation actions require a human in the loop. The approval request is created in Dataverse, shown in a Power Apps approval console, and the manager decision calls back into the Orchestrator so thread state is updated."
-
-### Minute 5:30 — Observability Dashboard (1:00)
-
-Open Power BI → Operations → Cost Engineering → Governance pages.
-
-> "Every agent run is logged with token counts, estimated cost, latency, quality score, risk score, and groundedness score. This is the cost engineering view — the business can see exactly what AI is spending and where."
-
-### Minute 6:30 — Closing (30 sec)
-
-> "This architecture runs on Microsoft infrastructure: Copilot Studio, Azure Functions, Dataverse and Microsoft Foundry, with Pulumi for reproducible IaC and configurable Azure OpenAI/Gemini model providers. Every component is observable, governed and auditable."
+It covers the demo path, Power Apps, Copilot Studio, Application Insights, Power BI, architecture diagram, and final talking points.
 
 ---
 
 ## Architecture Diagram
 
-Create in draw.io (diagrams.net) with the following layers (top to bottom):
+The architecture artifact now lives in:
 
-MVP path:
-
-```
-┌─────────────────────────────────────┐
-│  Business Users                     │
-│  [Copilot Studio] ← Test Chat       │
-└────────────┬────────────────────────┘
-             │ HTTP Action
-┌────────────▼────────────────────────┐
-│  Orchestrator Layer                 │
-│  [Azure Functions] (Python)         │
-│  └── [Microsoft Agent Framework]    │
-│       ├── Intake Agent              │
-│       ├── Data Agent                │
-│       ├── Draft Agent (SK compare)  │
-│       └── Critic Agent              │
-└────────────┬────────────────────────┘
-             │ Tool calls
-┌────────────▼────────────────────────┐
-│  MCP Server (FastMCP, Python)       │
-│  16 internal tools + 2 geocoding    │
-│  mock mode ← → live mode            │
-└──┬──────────────────────────────────┘
-   │                    │
-┌──▼──────┐    ┌────────▼────────────┐
-│Dataverse│    │ External MCP:       │
-│ Tables  │    │ OpenStreetMap /     │
-│(contact │    │ Geocoding Server    │
-│ order   │    └─────────────────────┘
-│shipment │
-│agentrun)│
-└─────────┘
-
-┌─────────────────────────────────────┐
-│  Governance + Observability         │
-│  [App Insights] [Power BI]          │
-│  [Key Vault] [Power Apps]           │
-│  [Microsoft Foundry (formerly Azure AI Foundry) Policy Agent]    │
-└─────────────────────────────────────┘
+```text
+docs/architecture/index.html
 ```
 
-Future custom-engine agent surface (post-MVP):
+It is an interactive HTML diagram using CDN-hosted Mermaid, jQuery and Panzoom.
 
-```
-┌─────────────────────────────────────────┐
-│  Microsoft 365 Agents SDK               │
-│  Agents Playground / optional Teams     │
-└────────────┬────────────────────────────┘
-             │
-┌────────────▼────────────────────────────┐
-│  Azure Function Orchestrator API        │
-│  same orchestration and MCP tool layer  │
-└─────────────────────────────────────────┘
-```
+Included views:
+
+- Architecture Overview
+- Runtime Flow
+- Governance Loop
+- Observability Flow
+
+Open it directly in a browser. No local web server is required.
 
 ---
 
@@ -307,6 +225,22 @@ This demonstrates that the architecture is not limited to Copilot Studio as the 
 
 ---
 
+## Post-Core Governance Phase: Microsoft Purview
+
+After the core workflow, Power Apps approval console and observability dashboard are stable, add Microsoft Purview as the governance/compliance layer.
+
+Purview should be used to document and demonstrate:
+
+- sensitive data discovery and classification
+- Dataverse approval/customer data governance
+- Power Platform connector DLP considerations
+- audit and compliance evidence
+- AI data governance narrative for the demo
+
+See [docs/13-purview-governance.md](13-purview-governance.md).
+
+---
+
 ## Next Step
 
-All 10 stages complete. Return to [CLAUDE.md](../CLAUDE.md) for the full project reference.
+Continue with [docs/12-copilot-studio.md](12-copilot-studio.md), then [docs/13-purview-governance.md](13-purview-governance.md) after the core workflow is stable.

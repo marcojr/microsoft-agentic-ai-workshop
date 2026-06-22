@@ -36,6 +36,7 @@ The repository currently includes:
 - `power-platform/` - Dataverse schema and Power Platform assets
 - `power-platform/custom-connectors/` - Power Apps custom connector OpenAPI contracts
 - `power-platform/power-apps/` - Canvas App formulas and build notes
+- `dashboards/powerbi/` - local Power BI Desktop report build notes
 - `infrastructure/pulumi/` - Azure infrastructure as code
 - `docs/` - build plan, architecture, and implementation notes
 
@@ -74,4 +75,7 @@ Service Principal
 - [docs/00-setup.md](./docs/00-setup.md)
 - [docs/01-project-setup.md](./docs/01-project-setup.md)
 - [docs/05-pulumi-infrastructure.md](./docs/05-pulumi-infrastructure.md)
+- [docs/10-observability-polish.md](./docs/10-observability-polish.md)
+- [docs/12-copilot-studio.md](./docs/12-copilot-studio.md)
+- [docs/13-purview-governance.md](./docs/13-purview-governance.md)
 - [docs/ai-azure-openai.md](./docs/ai-azure-openai.md)

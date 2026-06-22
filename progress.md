@@ -2,6 +2,16 @@
 
 Registro curto do que foi feito, decidido e verificado durante o projeto.
 
+## 2026-06-22
+
+### Architecture artifact
+
+- Created [docs/architecture/index.html](</c:/Users/conta/codebases/MS Agentic AI/docs/architecture/index.html>) as an interactive HTML architecture map using CDN-hosted Mermaid, jQuery and Panzoom.
+- Added [docs/architecture/README.md](</c:/Users/conta/codebases/MS Agentic AI/docs/architecture/README.md>) with direct opening instructions.
+- Updated [docs/10-observability-polish.md](</c:/Users/conta/codebases/MS Agentic AI/docs/10-observability-polish.md>) to mark the architecture diagram as produced and point to the interactive artifact.
+- Created [docs/14-final-walkthrough.md](</c:/Users/conta/codebases/MS Agentic AI/docs/14-final-walkthrough.md>) with the final core MVP demo path, talk track, proof points, and optional next phases.
+- Updated [docs/10-observability-polish.md](</c:/Users/conta/codebases/MS Agentic AI/docs/10-observability-polish.md>) to mark the final walkthrough as documented.
+
 ## 2026-06-17
 
 ### Setup audit
@@ -502,6 +512,52 @@ Decision:
 - Created `pc-transfer.txt` at the repository root for continuing the project on another Linux machine.
 - Included current architecture decisions, implemented components, required local env vars, Linux setup commands, smoke tests, and the recommended next prompt for the next Codex.
 
+## 2026-06-21 - Windows resume after Linux work
+
+- Read the updated handoff/progress from the other PC and confirmed the new Approval Console work is present locally.
+- Verified MCP tests: `35 passed`.
+- Initial orchestrator test run failed because the local Windows venv did not have `agent_framework` installed.
+- Installed orchestrator dependencies and found the unpinned `agent-framework` requirement resolved to an incompatible API.
+- Updated Agent Framework imports to match the installed SDK API:
+  - `ChatAgent`
+  - `AzureOpenAIChatClient`
+- Initially pinned `agent-framework==1.0.0b251120`, then replaced it with the smaller `agent-framework-core==1.0.0b251001` package for Azure Function deployment.
+- Verified orchestrator tests: `29 passed`.
+
+## 2026-06-21 - Azure Function App deployment
+
+- Published the orchestrator API to Azure Function App `func-agentops-dev-002`.
+- Applied live App Settings from local `.env` without printing secret values.
+- Removed unsupported Flex Consumption app settings:
+  - `FUNCTIONS_WORKER_RUNTIME`
+  - `SCM_DO_BUILD_DURING_DEPLOYMENT`
+  - `ENABLE_ORYX_BUILD`
+- Enabled `AzureWebJobsFeatureFlags=EnableWorkerIndexing` for Python v2 function indexing.
+- Fixed `function_app.py` so business imports happen inside handlers; this allowed the Function host to index routes even if a runtime dependency fails later.
+- Added `apps/orchestrator-api/static/approval-console.html` so `/api/approval-console` is included in the deployed package.
+- Added `.funcignore` for the Function App package.
+- Built `.python_packages` for Linux from Windows using:
+  - `uv pip install --python-platform x86_64-unknown-linux-gnu --target .python_packages/lib/site-packages ...`
+- Installed the local `mcp-server` package into `.python_packages` so `enterprise_agentops_mcp` is available in Azure.
+- Fixed Azure package dependency conflict by pinning:
+  - `agent-framework-core==1.0.0b251001`
+  - `fastmcp==3.4.2`
+  - `mcp[cli]<2`
+- Verified deployed functions are indexed:
+  - `approval_console`
+  - `approvals_pending`
+  - `approvals_decision`
+  - `webshop_order_support`
+  - `customer_case_summarise`
+  - `agent_runs`
+- Verified public routes:
+  - `GET /api/approval-console` -> `200`
+  - `GET /api/approvals/pending?code=<function-key>` -> `200`, returned 40 pending approvals.
+- Updated the Power Apps Custom Connector OpenAPI host to `func-agentops-dev-002.azurewebsites.net`.
+- Re-verified:
+  - OpenAPI JSON is valid.
+  - Approval console focused tests: `3 passed`.
+
 ## 2026-06-20 - Stage 9 intake agent start
 
 - Read `pc-transfer.txt`, `CLAUDE.md`, `context.MD`, `docs/09-agent-framework.md`, and the current `draft_agent.py` to resume from the other machine without restarting the project.
@@ -847,3 +903,364 @@ Known caveats:
 - User does not use Pulumi Cloud. If Pulumi is needed, use `pulumi login --local`, but beware local state mismatch between PCs.
 - Power Apps cloud connector will not call the Linux machine's `localhost`.
 - Some older Dataverse approval rows do not have thread/customer/order fields because they were created before the schema/contract expansion. New rows include them.
+
+## 2026-06-21T21:58:22+01:00 - Windows continuation: public Function and connector readiness
+
+Validated after returning to the Windows PC:
+
+- `power-platform/custom-connectors/agentops-approval-console.openapi.json` is valid JSON.
+- The connector OpenAPI host is already set to `func-agentops-dev-002.azurewebsites.net`.
+- `GET https://func-agentops-dev-002.azurewebsites.net/api/approval-console` returned `200`.
+- `GET https://func-agentops-dev-002.azurewebsites.net/api/approvals/pending` without a Function key returned `401`, confirming the Custom Connector must provide the `code` query key.
+
+Documentation update:
+
+- Updated `power-platform/custom-connectors/README.md` so it no longer says the OpenAPI file still contains the placeholder host.
+
+Next practical step:
+
+- Import the OpenAPI file as a Power Apps Custom Connector.
+- Create a connection using an Azure Functions host/function key as the `code` query parameter.
+- Test `ListPendingApprovals` from the connector before building the Canvas App.
+
+## 2026-06-21T22:33:08+01:00 - Dataverse solution created for project assets
+
+Decision:
+
+- Stop leaving project Dataverse customizations only in the Default Solution.
+- Use a dedicated unmanaged solution for the workshop/case assets.
+
+Created and verified:
+
+- Publisher friendly name: `AgentOps Workshop Publisher`
+- Publisher unique name: `agentops_workshop_publisher`
+- Solution friendly name: `AgentOps Workshop`
+- Solution unique name: `agentops_workshop`
+- Verified with `pac solution list`.
+
+Implemented:
+
+- Added `power-platform/scripts/Ensure-AgentOpsDataverseSolution.ps1`.
+- The script creates the Publisher/Solution if missing.
+- The script adds the custom tables to the solution:
+  - `cr_order`
+  - `cr_orderitem`
+  - `cr_shipment`
+  - `cr_returnrequest`
+  - `cr_refund`
+  - `cr_approvalrequest`
+  - `cr_agentrun`
+
+Verification:
+
+- Ran `pwsh -File ./power-platform/scripts/Ensure-AgentOpsDataverseSolution.ps1`.
+- Ran `pwsh -File ./power-platform/scripts/Deploy-AgentOpsDataverseSchema.ps1 -SolutionUniqueName agentops_workshop`.
+- Schema deploy completed with all existing tables/columns recognized.
+
+Documentation:
+
+- Updated `docs/06-dataverse-setup.md`.
+- Updated `power-platform/dataverse-schema/README.md`.
+
+## 2026-06-21T23:59:07+01:00 - Copilot Studio path selected
+
+Decision:
+
+- Use the current Power Platform Custom Connector as the first Copilot Studio tool path.
+- In the new Copilot Studio experience, this means adding the connector under the agent's `Tools` area.
+- The current connector exposes approval console operations:
+  - `ListPendingApprovals`
+  - `SubmitApprovalDecision`
+
+Reason:
+
+- This proves the Power Platform connector/tool integration before adding a separate customer order support endpoint.
+- A second connector/tool can be added later for `POST /api/webshop/order-support`.
+
+Current Power Apps status:
+
+- Canvas App can call the connector.
+- Pending approval records render in a gallery.
+- Item selection and detail labels work.
+- Approve/Reject buttons are still pending and can be resumed later.
+
+## 2026-06-22T00:18:13+01:00 - Function App thread-state fix and clean approval generated
+
+Problem found:
+
+- Calling `POST /api/agents/webshop/order-support` failed in Azure Functions.
+- First exception: `TableClient` did not have `create_table_if_not_exists`.
+- After switching to `TableServiceClient`, Azure returned `AuthorizationPermissionMismatch` when the Function tried to create the table at runtime.
+
+Decision:
+
+- Runtime code should not provision Azure Table Storage during a request.
+- The table is an infrastructure resource and belongs in Pulumi/infra provisioning.
+
+Fix:
+
+- Updated `apps/orchestrator-api/src/shared/thread_state_store.py`.
+- Removed runtime table creation from `ThreadStateStore`.
+- Runtime now assumes the table already exists and only performs entity reads/writes.
+- Verified Pulumi already declares:
+  - `threadStateTable`
+  - `Storage Table Data Contributor` role assignment for the Function App identity.
+
+Operational repair:
+
+- Created the existing environment table explicitly:
+
+```powershell
+az storage table create --name AgentThreadState --account-name stagentopsdeveus002 --auth-mode login
+```
+
+Validation:
+
+- Ran focused test:
+
+```powershell
+cd apps/orchestrator-api
+.\.venv\Scripts\python.exe -m pytest tests\test_thread_state_store.py -q
+# 2 passed
+```
+
+- Rebuilt Linux-target packages.
+- Republished `func-agentops-dev-002`.
+- Retried `POST /api/agents/webshop/order-support`.
+- It succeeded and generated:
+  - `runId`: `run-867bccc3`
+  - `threadId`: `thread-73c56a7e`
+  - `approvalId`: `apr-4874e82a`
+  - `customerName`: `John Smith`
+  - `orderNumber`: `WEB-1001`
+  - `approvalStatus`: `Pending`
+
+Next:
+
+- Ask Copilot Studio again to list pending approvals.
+- It should now include the clean approval with customer/order/thread context.
+
+## 2026-06-22T00:30:35+01:00 - Copilot Studio approval tools documented
+
+Validated Copilot Studio flow:
+
+- `ListPendingApprovals` tool works.
+- `SubmitApprovalDecision` tool works.
+- Clean approval was approved through the agent.
+- Follow-up approval listing returned no pending approvals.
+
+Documentation updated:
+
+- Added `docs/12-copilot-studio.md` with the validated approval tools and test prompts.
+- Linked `docs/12-copilot-studio.md` from `README.md`.
+
+Deferred:
+
+- Azure AI Search as Copilot Studio Knowledge is paused for now.
+- A future search/knowledge path can be revisited after the approval workflow and agent surface are stable.
+
+## 2026-06-22T20:21:25+01:00 - Microsoft Purview added to roadmap
+
+Decision:
+
+- Add Microsoft Purview as a post-core-workflow governance/compliance phase.
+- Do not implement it before the Power Apps approval console and observability dashboard are stable.
+
+Documentation updated:
+
+- Added `docs/13-purview-governance.md`.
+- Linked it from `README.md`.
+- Added Purview as a post-core governance phase in `docs/10-observability-polish.md`.
+- Added Purview to the next steps in `docs/12-copilot-studio.md`.
+
+Purview scope:
+
+- data discovery and catalog
+- sensitive data classification
+- Dataverse approval/customer data governance
+- Power Platform connector DLP considerations
+- audit/compliance evidence
+- AI governance narrative for the final demo
+
+## 2026-06-22T21:00:04+01:00 - Power Apps approval button formulas corrected
+
+Updated the Canvas App formula documentation after validating the real Power Apps custom connector signature.
+
+Finding:
+
+- The OpenAPI operation uses a JSON body, but Power Apps exposes `SubmitApprovalDecision` as required parameters plus an optional record:
+
+```powerfx
+SubmitApprovalDecision(approvalId, decision, approvedBy, {comment: commentText})
+```
+
+Documentation updated:
+
+- `power-platform/power-apps/approval-console-formulas.md`
+- `docs/11-power-apps-approval-console.md`
+
+Current Power Apps status:
+
+- Gallery can list pending approvals.
+- Detail labels can show selected approval fields.
+- Approve/Reject formulas now use the signature proven in Canvas Studio.
+- After a decision, the app refreshes pending approvals, clears the comment and clears the selected approval.
+
+## 2026-06-22T21:06:21+01:00 - Power BI Desktop selected for observability reports
+
+Decision:
+
+- Use local Power BI Desktop for the observability and cost engineering report.
+- Do not require Power BI Service publishing for the workshop flow.
+- Publishing/sharing can be added later if a Power BI Pro, Premium Per User, or Fabric/Premium capacity is available.
+
+Documentation updated:
+
+- Added `dashboards/powerbi/README.md`.
+- Updated `docs/10-observability-polish.md` to make Power BI Desktop the primary reporting path.
+- Updated `README.md` with the dashboard folder and Stage 10 link.
+
+Report scope:
+
+- Operations page: total runs, latency, approvals, workflow distribution.
+- Cost Engineering page: total cost, cost by model/vendor/workflow, high-cost runs.
+- Governance page: risk, quality, groundedness and approval pressure.
+
+Preferred data source:
+
+- Dataverse table `cr_agentrun`.
+
+Offline fallback:
+
+- `mcp-server/src/enterprise_agentops_mcp/data/agent_runs.json`.
+
+## 2026-06-22T21:08:41+01:00 - Power BI Desktop prerequisite documented
+
+Updated setup/reporting documentation to explicitly include Power BI Desktop installation.
+
+Documentation updated:
+
+- `docs/00-setup.md`
+- `dashboards/powerbi/README.md`
+
+Install command:
+
+```powershell
+winget install Microsoft.PowerBI
+```
+
+## 2026-06-22T21:40:24+01:00 - Power BI Operations page started
+
+Power BI Desktop work completed:
+
+- Installed/opened Power BI Desktop.
+- Connected Power BI Desktop to Dataverse.
+- Loaded the `cr_agentrun` table.
+- Created the first report page: `Operations`.
+- Added initial visuals:
+  - Total Runs card
+  - Estimated Cost card
+  - Average Latency card
+  - Runs by Workflow donut chart
+  - Agent runs table
+
+Notes:
+
+- Current dataset has only 2 agent runs, so visual distribution is limited.
+- Estimated cost appears as `0.00` unless decimal formatting is increased, because the values are very small.
+
+Remaining report work:
+
+- Save the report as `dashboards/powerbi/agentops-observability.pbix`.
+- Generate more agent runs for a better demo dataset.
+- Complete `Cost Engineering` page.
+- Complete `Governance` page.
+- Document the final walkthrough across Copilot Studio, Orchestrator, MCP, Dataverse, Power Apps and Power BI.
+
+## 2026-06-22T22:05:00+01:00 - Stage 10 scope aligned and telemetry implemented
+
+Decision:
+
+- Keep Stage 10 focused on the planned deliverable, not perfection.
+- Remove `25 seeded agent runs` as a milestone.
+- Treat one working Power BI Operations page as sufficient for the core case.
+- Keep Cost Engineering and Governance Power BI pages as optional extensions.
+- Keep Microsoft Purview as a separate future phase.
+- Treat the final walkthrough as a demo script/document, not a runtime feature.
+
+Implemented:
+
+- Added `mcp-server/src/enterprise_agentops_mcp/services/telemetry.py`.
+- Wired `log_agent_run` to create an Application Insights/OpenTelemetry span named `mcp.log_agent_run`.
+- Captured workflow, intent, model, vendor, token counts, latency, tool list, approval flag, risk, quality, groundedness, run id and estimated cost as span attributes.
+- Enabled `azure-monitor-opentelemetry-exporter>=1.0.0b53` in `apps/orchestrator-api/requirements.txt` so the Azure Function deployment has the telemetry dependency.
+
+Documentation updated:
+
+- `docs/10-observability-polish.md`
+- `dashboards/powerbi/README.md`
+
+Verification:
+
+```powershell
+cd mcp-server
+uv run pytest tests/test_observability.py tests/test_dataverse_mode.py -q
+# 4 passed
+```
+
+Implementation note:
+
+- The first attempt used the higher-level `azure-monitor-opentelemetry` package.
+- The Orchestrator venv exposed an import failure around `opentelemetry.sdk._logs.LogData`.
+- The implementation was corrected to use `azure-monitor-opentelemetry-exporter>=1.0.0b53` directly with `opentelemetry-sdk`.
+- Focused Orchestrator verification now passes:
+
+```powershell
+cd apps/orchestrator-api
+.\.venv\Scripts\python.exe -m pytest tests\test_webshop_order_support.py tests\test_approval_console.py -q
+# 6 passed
+```
+
+## 2026-06-22T22:18:00+01:00 - Telemetry tested in Azure Application Insights
+
+Problem found during Azure test:
+
+- A normal `func azure functionapp publish ... --python` remote build did not include the local `enterprise_agentops_mcp` package.
+- The Azure Function failed with `ModuleNotFoundError: No module named 'enterprise_agentops_mcp'`.
+
+Deployment fix:
+
+- Rebuilt local Linux-compatible `.python_packages` for the Function App and included the local MCP package:
+
+```powershell
+cd apps/orchestrator-api
+uv pip install --python-platform x86_64-unknown-linux-gnu --python-version 3.12 --target .python_packages/lib/site-packages -r requirements.txt ..\..\mcp-server
+func azure functionapp publish func-agentops-dev-002 --no-build
+```
+
+Telemetry reliability fix:
+
+- Switched the telemetry provider from batch sending to `SimpleSpanProcessor`.
+- Added explicit `force_flush()` after `log_agent_run`.
+- This makes the Application Insights span visible immediately enough for serverless request testing.
+
+Azure validation:
+
+- Called the public Azure Function endpoint:
+
+```text
+POST /api/agents/webshop/order-support
+```
+
+- The endpoint succeeded and produced:
+  - `runId`: `run-5de611ba`
+  - `threadId`: `thread-ebecf698`
+  - `approvalId`: `apr-1f116a6e`
+  - `approvalStatus`: `Pending`
+  - `modelUsed`: `gpt-5-mini`
+
+- Queried Application Insights and confirmed a telemetry row:
+  - `itemType`: `dependency`
+  - `name`: `mcp.log_agent_run`
+  - `agentops.run_id`: `run-5de611ba`
+  - attributes included workflow, intent, model, vendor, token counts, latency, approval flag, risk, quality, groundedness, tools called and estimated cost.

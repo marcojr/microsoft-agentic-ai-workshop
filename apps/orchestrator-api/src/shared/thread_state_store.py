@@ -89,11 +89,11 @@ class ThreadStateStore:
         if connection_string:
             from azure.data.tables import TableClient
 
+            # Step 1: Use the pre-provisioned table for entity reads and writes.
             self._table_client = TableClient.from_connection_string(
                 conn_str=connection_string,
                 table_name=self.table_name,
             )
-            self._table_client.create_table_if_not_exists()
             return self._table_client
 
         account_url = os.getenv("THREAD_STATE_STORAGE_ACCOUNT_URL")
@@ -106,12 +106,13 @@ class ThreadStateStore:
         from azure.data.tables import TableClient
         from azure.identity import DefaultAzureCredential
 
+        # Step 1: Use managed identity against the pre-provisioned table.
+        credential = DefaultAzureCredential()
         self._table_client = TableClient(
             endpoint=account_url,
             table_name=self.table_name,
-            credential=DefaultAzureCredential(),
+            credential=credential,
         )
-        self._table_client.create_table_if_not_exists()
         return self._table_client
 
     def _get_table(self, thread_id: str) -> ThreadState | None:

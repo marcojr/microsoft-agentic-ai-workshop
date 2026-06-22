@@ -44,14 +44,22 @@ Preferred path for this repo:
 Scripted assets:
 
 - schema file: [power-platform/dataverse-schema/schema.v1.json](../power-platform/dataverse-schema/schema.v1.json)
+- solution ensure script: [power-platform/scripts/Ensure-AgentOpsDataverseSolution.ps1](../power-platform/scripts/Ensure-AgentOpsDataverseSolution.ps1)
 - schema deploy script: [power-platform/scripts/Deploy-AgentOpsDataverseSchema.ps1](../power-platform/scripts/Deploy-AgentOpsDataverseSchema.ps1)
 - seed clear script: [power-platform/scripts/Clear-AgentOpsDataverseSeed.ps1](../power-platform/scripts/Clear-AgentOpsDataverseSeed.ps1)
 - sample data seed script: [power-platform/scripts/Seed-AgentOpsDataverseData.ps1](../power-platform/scripts/Seed-AgentOpsDataverseData.ps1)
 
+Current unmanaged solution:
+
+- Friendly name: `AgentOps Workshop`
+- Unique name: `agentops_workshop`
+- Publisher unique name: `agentops_workshop_publisher`
+
 Run from repo root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\power-platform\scripts\Deploy-AgentOpsDataverseSchema.ps1
+powershell -ExecutionPolicy Bypass -File .\power-platform\scripts\Ensure-AgentOpsDataverseSolution.ps1
+powershell -ExecutionPolicy Bypass -File .\power-platform\scripts\Deploy-AgentOpsDataverseSchema.ps1 -SolutionUniqueName agentops_workshop
 powershell -ExecutionPolicy Bypass -File .\power-platform\scripts\Clear-AgentOpsDataverseSeed.ps1
 powershell -ExecutionPolicy Bypass -File .\power-platform\scripts\Seed-AgentOpsDataverseData.ps1
 ```
@@ -59,7 +67,8 @@ powershell -ExecutionPolicy Bypass -File .\power-platform\scripts\Seed-AgentOpsD
 On Linux/macOS with PowerShell 7:
 
 ```bash
-pwsh -File ./power-platform/scripts/Deploy-AgentOpsDataverseSchema.ps1
+pwsh -File ./power-platform/scripts/Ensure-AgentOpsDataverseSolution.ps1
+pwsh -File ./power-platform/scripts/Deploy-AgentOpsDataverseSchema.ps1 -SolutionUniqueName agentops_workshop
 pwsh -File ./power-platform/scripts/Clear-AgentOpsDataverseSeed.ps1
 pwsh -File ./power-platform/scripts/Seed-AgentOpsDataverseData.ps1
 ```
