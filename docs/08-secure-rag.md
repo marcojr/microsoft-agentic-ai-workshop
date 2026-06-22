@@ -6,13 +6,13 @@ Create policy documents, index them in Azure AI Search, and wire `search_knowled
 
 ## Day 8 Deliverables
 
-- [x] Policy documents created in `data/sample-documents/`
-- [x] Azure AI Search service provisioned
-- [x] Azure AI Search index created
-- [x] Documents ingested
-- [x] `search_knowledge_articles` wired to Azure AI Search mode
-- [x] Citations, confidence scores and source metadata included
-- [x] Mock fallback retained
+- dx] Policy documents created in `data/sample-documents/`
+- dx] Azure AI Search service provisioned
+- dx] Azure AI Search index created
+- dx] Documents ingested
+- dx] `search_knowledge_articles` wired to Azure AI Search mode
+- dx] Citations, confidence scores and source metadata included
+- dx] Mock fallback retained
 
 ## Current Implementation Status
 
@@ -137,7 +137,7 @@ client = SearchIndexClient(
 
 index = SearchIndex(
     name=os.getenv("AZURE_AI_SEARCH_INDEX", "enterprise-knowledge"),
-    fields=[
+    fields=d
         SimpleField(name="id", type=SearchFieldDataType.String, key=True),
         SearchableField(name="title", type=SearchFieldDataType.String),
         SearchableField(name="content", type=SearchFieldDataType.String),
@@ -169,7 +169,7 @@ search_client = SearchClient(
     AzureKeyCredential(os.getenv("AZURE_AI_SEARCH_KEY"))
 )
 
-documents = []
+documents = d]
 for doc_file in Path("data/sample-documents").glob("*.md"):
     content = doc_file.read_text(encoding="utf-8")
 
@@ -202,7 +202,7 @@ import os
 from azure.search.documents import SearchClient
 from azure.core.credentials import AzureKeyCredential
 
-def search_knowledge(query: str, max_results: int = 3) -> list[dict]:
+def search_knowledge(query: str, max_results: int = 3) -> listddict]:
     client = SearchClient(
         os.getenv("AZURE_AI_SEARCH_ENDPOINT"),
         os.getenv("AZURE_AI_SEARCH_INDEX", "enterprise-knowledge"),
@@ -211,14 +211,14 @@ def search_knowledge(query: str, max_results: int = 3) -> list[dict]:
 
     results = client.search(search_text=query, top=max_results)
 
-    return [
+    return d
         {
-            "articleId": r["id"],
-            "title": r["title"],
-            "category": r["category"],
-            "summary": r["content"][:400],
+            "articleId": rd"id"],
+            "title": rd"title"],
+            "category": rd"category"],
+            "summary": rd"content"]d:400],
             "confidence": round(min(0.99, 0.45 + r.get("@search.score", 0.0) / 4), 2),
-            "source": r["source"]
+            "source": rd"source"]
         }
         for r in results
     ]
@@ -243,4 +243,4 @@ MCP_KNOWLEDGE_MODE=search  # mock | search
 
 ## Next Step
 
-[docs/09-agent-framework.md](09-agent-framework.md) — Day 9: Microsoft Agent Framework + Copilot Studio, with one Semantic Kernel comparison agent.
+[docs/09-agent-framework.md](09-agent-framework.md) — Day 9: Microsoft Agent Framework + Copilot Studio.

@@ -2,6 +2,40 @@
 
 Registro curto do que foi feito, decidido e verificado durante o projeto.
 
+## 2026-06-22 - Linux handover refresh
+
+- Rewrote `pc-transfer.txt` as an updated Linux handover.
+- Captured current MVP status, Microsoft Agent Framework-only runtime decision, verification commands, required env vars, and next-phase roadmap.
+- Added the recommended prompt for the next Codex session on Linux.
+
+## 2026-06-22 - Copilot skills plan
+
+- Expanded `docs/next-phases.md` with a Copilot Studio skills strategy.
+- Defined planned skills for approval review, approval decisions, risk explanation, order triage, policy lookup and escalation recommendation.
+- Documented when to use skills, tools or the Orchestrator API.
+
+## 2026-06-22 - Copilot modernization migration plan
+
+- Expanded Phase 2 in `docs/next-phases.md` with an agent migration matrix.
+- Defined which responsibilities move to modern Copilot Studio, which are partially migrated, and which stay in backend/MCP.
+- Documented that Copilot Studio should become the orchestration/front-door layer, while governed workflow execution remains in the Orchestrator API and MCP tools.
+
+## 2026-06-22 - Next phases roadmap
+
+- Created `docs/next-phases.md` with the post-MVP roadmap.
+- Defined future phases for Copilot Studio modernization, Microsoft 365 Agents SDK, RAG expansion, Power Platform tool ecosystem expansion, and Purview governance.
+- Kept Purview as the final governance phase because it can involve trial/licensing/pay-as-you-go decisions.
+
+## 2026-06-22 - Removed previous agent SDK from active runtime
+
+- Migrated `DraftAgent` to Microsoft Agent Framework.
+- Removed the previous agent SDK dependency from `apps/orchestrator-api/requirements.txt`.
+- Updated `agent_runtime.py` so it only builds Microsoft Agent Framework Azure OpenAI clients.
+- Updated Stage 9, agent docs, architecture docs and central project instructions so the active runtime is Microsoft Agent Framework only.
+- Verified focused orchestrator tests for Draft Agent and runtime helper.
+
+
+
 ## 2026-06-22
 
 ### Architecture artifact
@@ -471,10 +505,10 @@ Decision:
 - Re-verified:
   - MCP tests: `33 passed`
   - orchestrator tests: `2 passed`
-- Installed Semantic Kernel in the orchestrator API virtual environment:
-  - package: `semantic-kernel[azure]`
-  - installed version observed locally: `semantic-kernel 1.36.0`
-- Added the first Semantic Kernel agent:
+- Installed the previous agent SDK in the orchestrator API virtual environment:
+  - package: `previous-agent-sdk[azure]`
+  - installed version observed locally: `previous-agent-sdk 1.36.0`
+- Added the first the previous agent SDK agent:
   - `apps/orchestrator-api/src/agents/draft_agent.py`
   - class: `DraftAgent`
   - service: `AzureChatCompletion`
@@ -482,7 +516,7 @@ Decision:
   - API version: `2024-10-21`
   - settings: `max_completion_tokens=1600`, `reasoning_effort=low`
 - Updated `apps/orchestrator-api/src/shared/azure_openai_client.py` so the existing orchestrator path now delegates summary generation to `DraftAgent`.
-- Inspected Semantic Kernel `FunctionResult` and confirmed token usage/model are available through `result.get_inner_content()`.
+- Inspected the previous agent SDK `FunctionResult` and confirmed token usage/model are available through `result.get_inner_content()`.
 - Ran a real Draft Agent smoke test:
   - model: `gpt-5-mini-2025-08-07`
   - prompt tokens: `192`
@@ -497,7 +531,7 @@ Decision:
 - Updated project documentation to use `Microsoft Foundry (formerly Azure AI Foundry)` as the primary product name.
 - Updated active model references to Azure OpenAI `gpt-5-mini`.
 - Clarified that Microsoft Agent Framework is the modern pro-code direction.
-- Documented that only the Draft Agent remains on Semantic Kernel, intentionally, for comparison, didactics and legacy understanding.
+- Documented that only the Draft Agent remains on the previous agent SDK, intentionally, for comparison, didactics and legacy understanding.
 - Removed Claude/Anthropic from active agent definitions; Anthropic remains only as an optional legacy reference.
 - Corrected Pulumi documentation to C# and kept Azure OpenAI + Gemini as the active comparison path.
 
@@ -561,7 +595,7 @@ Decision:
 ## 2026-06-20 - Stage 9 intake agent start
 
 - Read `pc-transfer.txt`, `CLAUDE.md`, `context.MD`, `docs/09-agent-framework.md`, and the current `draft_agent.py` to resume from the other machine without restarting the project.
-- Confirmed the next meaningful Stage 9 step is the Microsoft Agent Framework `IntakeAgent`, while keeping `DraftAgent` on Semantic Kernel as the comparison track.
+- Confirmed the next meaningful Stage 9 step is the Microsoft Agent Framework `IntakeAgent`, while keeping `DraftAgent` on the previous agent SDK as the historical comparison path.
 - Installed `agent-framework` into the orchestrator API environment and verified the real Python package surface locally before implementing against it.
 - Added `apps/orchestrator-api/src/agents/intake_agent.py` using Microsoft Agent Framework with Azure OpenAI routing and short step-by-step English comments.
 - Added `apps/orchestrator-api/tests/test_intake_agent.py` to cover strict JSON parsing and basic input validation for the new intake agent.
@@ -576,11 +610,11 @@ Decision:
 
 ## 2026-06-20 - Draft agent structured output for didactics
 
-- Updated `apps/orchestrator-api/src/agents/draft_agent.py` so the Semantic Kernel comparison agent now requests a structured contract instead of free-form text.
+- Updated `apps/orchestrator-api/src/agents/draft_agent.py` so the the previous agent SDK comparison agent now requests a structured contract instead of free-form text.
 - Added a simple didactic response contract with:
   - `summary`
   - `approvalRequired`
-- Configured the Semantic Kernel Azure OpenAI execution settings to use `response_format=DraftSummaryContract` and `structured_json_response=True`.
+- Configured the the previous agent SDK Azure OpenAI execution settings to use `response_format=DraftSummaryContract` and `structured_json_response=True`.
 - Added `apps/orchestrator-api/tests/test_draft_agent.py` to validate the contract parsing path independently of live model calls.
 - Simplified the didactic contract again so it now contains only `summary` and `approvalRequired`.
 
@@ -629,10 +663,10 @@ Decision:
 ## 2026-06-21 - Shared Azure OpenAI agent runtime
 
 - Added `apps/orchestrator-api/src/shared/agent_runtime.py` with `AzureOpenAIAgentRuntime`.
-- Centralized Azure OpenAI config validation and client/kernel construction for Microsoft Agent Framework and Semantic Kernel.
+- Centralized Azure OpenAI config validation and client/kernel construction for Microsoft Agent Framework and the previous agent SDK.
 - Updated `IntakeAgent` to build its Agent Framework client through the shared runtime.
-- Updated `DraftAgent` to build its Semantic Kernel kernel/settings through the shared runtime while keeping it as the only SK comparison agent.
-- Added focused runtime tests for missing configuration and Semantic Kernel settings construction.
+- Updated `DraftAgent` to build its the previous agent SDK kernel/settings through the shared runtime while keeping it as the only previous SDK comparison agent.
+- Added focused runtime tests for missing configuration and the previous agent SDK settings construction.
 
 ## 2026-06-21 - Data agent extraction
 

@@ -1,15 +1,8 @@
-from typing import Any
-
 from agent_framework.azure import AzureOpenAIChatClient
-from semantic_kernel import Kernel
-from semantic_kernel.connectors.ai.open_ai import (
-    AzureChatCompletion,
-    AzureChatPromptExecutionSettings,
-)
 
 
 class AzureOpenAIAgentRuntime:
-    """Builds Azure OpenAI runtime objects for the supported agent frameworks."""
+    """Builds Azure OpenAI runtime objects for Microsoft Agent Framework agents."""
 
     def __init__(self) -> None:
         from enterprise_agentops_mcp import config
@@ -36,35 +29,4 @@ class AzureOpenAIAgentRuntime:
             api_key=self.api_key,
             endpoint=self.endpoint,
             api_version=self.api_version,
-        )
-
-    def build_semantic_kernel(self) -> Kernel:
-        # Step 3: Build the Semantic Kernel runtime used by the comparison agent.
-        kernel = Kernel()
-        kernel.add_service(
-            AzureChatCompletion(
-                service_id=self.service_id,
-                deployment_name=self.deployment,
-                endpoint=self.endpoint,
-                api_key=self.api_key,
-                api_version=self.api_version,
-            )
-        )
-        return kernel
-
-    def build_semantic_kernel_settings(
-        self,
-        *,
-        response_format: type[Any] | None = None,
-        max_completion_tokens: int = 1600,
-        reasoning_effort: str = "low",
-        structured_json_response: bool = False,
-    ) -> AzureChatPromptExecutionSettings:
-        # Step 4: Build GPT-5-compatible Semantic Kernel execution settings.
-        return AzureChatPromptExecutionSettings(
-            service_id=self.service_id,
-            max_completion_tokens=max_completion_tokens,
-            reasoning_effort=reasoning_effort,
-            response_format=response_format,
-            structured_json_response=structured_json_response,
         )

@@ -7,8 +7,7 @@ All agents in the Enterprise AgentOps Control Tower. Each agent has a defined ro
 ## Overview
 
 Default active direction:
-- New pro-code agents use Microsoft Agent Framework.
-- The Draft Agent is intentionally the only Semantic Kernel agent, kept for comparison, didactics and legacy understanding.
+- All active pro-code agents use Microsoft Agent Framework or deterministic MCP-backed execution.
 - Azure OpenAI `gpt-5-mini` is the primary model for the Microsoft case.
 - Gemini `gemini-3.5-flash` is the secondary comparison model.
 - Anthropic/Claude is not part of the active runtime path.
@@ -262,7 +261,7 @@ Output ONLY valid JSON:
 
 **Model:** `gpt-5-mini` by default. Gemini can be used as the secondary provider.
 
-**Framework:** Semantic Kernel. This is intentional. It is the single comparison agent kept so we can study how Semantic Kernel maps to the newer Microsoft Agent Framework direction.
+**Framework:** Microsoft Agent Framework.
 
 **System Prompt:**
 

@@ -11,4 +11,3 @@ httpx
 mcp[cli]<2
 msal
 python-dotenv
-semantic-kernel[azure]

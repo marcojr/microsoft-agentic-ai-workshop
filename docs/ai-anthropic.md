@@ -199,22 +199,11 @@ def run_intake_agent(user_message: str) -> dict:
 
 ---
 
-## Legacy Semantic Kernel Integration
+## Legacy Anthropic Integration
 
-Semantic Kernel wraps the Anthropic client transparently via the `AnthropicChatCompletion` connector:
+Anthropic is not part of the active runtime path.
 
-```python
-from semantic_kernel import Kernel
-from semantic_kernel.connectors.ai.anthropic import AnthropicChatCompletion
-
-kernel = Kernel()
-kernel.add_service(AnthropicChatCompletion(
-    ai_model_id="claude-sonnet-4-6",
-    api_key=os.getenv("ANTHROPIC_API_KEY")
-))
-```
-
-This is not used by the active project runtime. See [docs/09-agent-framework.md](09-agent-framework.md) for the current direction: Microsoft Agent Framework, with one Semantic Kernel Draft Agent kept for comparison.
+This is not used by the active project runtime. See [docs/09-agent-framework.md](09-agent-framework.md) for the current Microsoft Agent Framework direction.
 
 ---
 

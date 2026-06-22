@@ -10,8 +10,7 @@ The system is not a generic chatbot. It is an enterprise-grade agentic workflow 
 
 * Copilot Studio as the business-facing agent interface
 * Microsoft Foundry (formerly Azure AI Foundry) for managed AI agent capabilities
-* Microsoft Agent Framework (successor to Semantic Kernel + AutoGen) for code-first orchestration
-* one Semantic Kernel Draft Agent kept intentionally for comparison, didactics and legacy understanding
+* Microsoft Agent Framework for code-first orchestration
 * Microsoft 365 Agents SDK as the final-phase custom-engine agent surface
 * A custom MCP Server as the governed enterprise tool layer
 * Dataverse as the business data layer
@@ -127,7 +126,7 @@ Copilot Studio Action / REST Action
   ↓
 Azure Function Orchestrator API
   ↓
-Microsoft Agent Framework (successor to Semantic Kernel + AutoGen)
+Microsoft Agent Framework
   ↓
 MCP Client
   ↓
@@ -190,7 +189,7 @@ It must:
 * validate requests
 * authenticate callers
 * route requests to the correct workflow
-* call Microsoft Agent Framework (successor to Semantic Kernel + AutoGen) orchestration
+* call Microsoft Agent Framework orchestration
 * call MCP tools through the MCP client
 * trigger Service Bus, Logic Apps or optional Power Automate integration when required
 * log execution metadata
@@ -209,13 +208,13 @@ GET  /api/agent-runs/{runId}
 
 ---
 
-## 3. Microsoft Agent Framework (successor to Semantic Kernel + AutoGen)
+## 3. Microsoft Agent Framework
 
-Microsoft Agent Framework (successor to Semantic Kernel + AutoGen) is the pro-code orchestration layer.
+Microsoft Agent Framework is the pro-code orchestration layer.
 
 It is responsible for coordinating specialised agents and deciding which tools must be called.
 
-Semantic Kernel is not the strategic direction for the whole project. It remains in exactly one place: the Draft Agent. That agent is kept as a practical comparison track so the project can explain the evolution from Semantic Kernel to Microsoft Agent Framework.
+All active pro-code LLM agents use Microsoft Agent Framework.
 
 All agent and orchestration code should include short step-by-step comments in English. The goal is educational clarity: explain the major execution steps and why they exist, without adding comments that simply repeat obvious syntax.
 
@@ -245,7 +244,7 @@ Intake Agent
 Data Agent
 Knowledge Agent
 Governance Agent
-Draft Agent (Semantic Kernel comparison track)
+Draft Agent
 Critic / Evaluator Agent
 Cost Agent
 Workflow Agent
@@ -528,7 +527,7 @@ It allows the same backend capabilities to be reused by a custom-engine Microsof
 * run in Microsoft 365 Agents Playground during development
 * optionally run in Microsoft Teams when a suitable developer tenant is available
 * call the same Azure Function Orchestrator API
-* use the same Microsoft Agent Framework (successor to Semantic Kernel + AutoGen) orchestration
+* use the same Microsoft Agent Framework orchestration
 * consume the same Enterprise AgentOps MCP Server tools
 * support the same Dataverse, Secure RAG, approval, observability and cost-tracking workflows
 
@@ -539,7 +538,7 @@ Microsoft 365 Agents SDK Agent
   ↓
 Azure Function Orchestrator API
   ↓
-Microsoft Agent Framework (successor to Semantic Kernel + AutoGen)
+Microsoft Agent Framework
   ↓
 MCP Client
   ↓
@@ -1864,7 +1863,7 @@ Intake Agent using Microsoft Agent Framework
 Data Agent
 Knowledge Agent
 Governance Agent using Microsoft Agent Framework
-Draft Agent using Semantic Kernel for comparison
+Draft Agent using Microsoft Agent Framework
 Critic Agent using Microsoft Agent Framework
 Cost Agent
 Copilot Studio test agent
@@ -1900,7 +1899,7 @@ Microsoft 365 Agents SDK project
 Microsoft 365 Agents Playground test
 custom-engine agent connected to Orchestrator API
 reuse of Microsoft Agent Framework orchestration
-reuse of the single Semantic Kernel Draft Agent only as comparison track
+reuse of Microsoft Agent Framework orchestration
 reuse of Enterprise AgentOps MCP Server tools
 optional Teams deployment if tenant/sideloading is available
 screenshots and demo notes
@@ -1960,7 +1959,7 @@ Estimated agent run cost: $0.012
 
 This project is a Microsoft Agentic AI reference architecture.
 
-It combines Copilot Studio for the business-facing test chat agent, Microsoft Foundry (formerly Azure AI Foundry) for managed agent capability, Microsoft Agent Framework (successor to Semantic Kernel + AutoGen) for code-first orchestration, a custom MCP Server for governed enterprise tools, Dataverse for business data and approval records, Power Apps for the approval console, Azure AI Search for Secure RAG, Logic Apps and Service Bus for integration workflow, Pulumi for Azure infrastructure, and Application Insights / Power BI for observability and AI cost engineering.
+It combines Copilot Studio for the business-facing test chat agent, Microsoft Foundry (formerly Azure AI Foundry) for managed agent capability, Microsoft Agent Framework for code-first orchestration, a custom MCP Server for governed enterprise tools, Dataverse for business data and approval records, Power Apps for the approval console, Azure AI Search for Secure RAG, Logic Apps and Service Bus for integration workflow, Pulumi for Azure infrastructure, and Application Insights / Power BI for observability and AI cost engineering.
 
 The architecture also includes Microsoft 365 Agents SDK as a final-phase custom-engine agent surface, allowing the same Orchestrator API and MCP-based tool layer to be reused beyond Copilot Studio.
 
@@ -1970,7 +1969,7 @@ The purpose is to show how enterprise AI agents can move beyond chatbot demos an
 
 ## CV Bullet
 
-Built an Enterprise AgentOps Control Tower reference architecture demonstrating end-to-end Microsoft Agentic AI across Copilot Studio, Microsoft Foundry (formerly Azure AI Foundry), Foundry Agent Service, Microsoft Agent Framework (successor to Semantic Kernel + AutoGen), MCP Server, Secure RAG, Azure AI Search, Dataverse, Power Apps, Power Platform, Logic Apps, Service Bus, Azure Functions, Pulumi, observability and AI cost engineering. The solution orchestrates multiple agents, enterprise data, workflow approvals, governance checks, audit trails, token/cost tracking, MCP tools and operational dashboards into a single controlled agentic workflow.
+Built an Enterprise AgentOps Control Tower reference architecture demonstrating end-to-end Microsoft Agentic AI across Copilot Studio, Microsoft Foundry (formerly Azure AI Foundry), Foundry Agent Service, Microsoft Agent Framework, MCP Server, Secure RAG, Azure AI Search, Dataverse, Power Apps, Power Platform, Logic Apps, Service Bus, Azure Functions, Pulumi, observability and AI cost engineering. The solution orchestrates multiple agents, enterprise data, workflow approvals, governance checks, audit trails, token/cost tracking, MCP tools and operational dashboards into a single controlled agentic workflow.
 
 ---
 
@@ -1982,9 +1981,9 @@ Microsoft 365 Agents SDK is the final-phase custom-engine agent surface, initial
 
 Microsoft Foundry (formerly Azure AI Foundry) is the managed AI agent platform.
 
-Microsoft Agent Framework (successor to Semantic Kernel + AutoGen) is the pro-code orchestration layer.
+Microsoft Agent Framework is the pro-code orchestration layer.
 
-Semantic Kernel remains only as the Draft Agent comparison implementation.
+All active pro-code LLM agents use Microsoft Agent Framework.
 
 The Enterprise AgentOps MCP Server is the governed enterprise tool layer.
 

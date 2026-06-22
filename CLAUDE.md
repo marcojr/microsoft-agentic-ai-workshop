@@ -39,7 +39,7 @@ Secondary model: `gemini-3.5-flash` via Gemini.
 │   ├── 06-dataverse-setup.md        ← day 6: Dataverse tables + sample data
 │   ├── 07-dataverse-integration.md  ← day 7: replace mocks with Dataverse
 │   ├── 08-secure-rag.md             ← day 8: Azure AI Search + RAG
-│   ├── 09-agent-framework.md        ← day 9: Microsoft Agent Framework + one Semantic Kernel comparison agent
+│   ├── 09-agent-framework.md        ← day 9: Microsoft Agent Framework agents
 │   ├── 10-observability-polish.md   ← day 10: cost, dashboard, demo
 │   ├── 11-power-apps-approval-console.md ← day 11: Power Apps human approval console
 │   ├── agents.md                    ← all agents: roles, prompts, wiring
@@ -96,8 +96,7 @@ pac auth create --url https://yourorg.crm.dynamics.com
 |---|---|
 | Business Agent | Copilot Studio (Test Chat for MVP) |
 | Managed Agent | Microsoft Foundry (formerly Azure AI Foundry) / Foundry Agent Service |
-| Pro-code Orchestration | Microsoft Agent Framework (successor to Semantic Kernel + AutoGen) |
-| Legacy/Comparison Agent | Semantic Kernel Draft Agent, kept intentionally for learning and comparison |
+| Pro-code Orchestration | Microsoft Agent Framework |
 | Custom-Engine Agent (Post-MVP) | Microsoft 365 Agents SDK / Agents Playground |
 | Governed Tool Layer | MCP Server (Python, FastMCP) |
 | Public MCP Server | OpenStreetMap / Geocoding MCP Server |
@@ -135,7 +134,7 @@ pac auth create --url https://yourorg.crm.dynamics.com
 - Keep mock fallback mode even after Dataverse integration is complete.
 - Pulumi manages all Azure resources — do not create resources manually in the portal.
 - Dataverse runtime authentication standard is Service Principal. Use interactive `pac auth` only for maker/admin tasks.
-- Stage 9 uses Microsoft Agent Framework as the modern pro-code direction. Keep exactly one Semantic Kernel agent, the Draft Agent, for comparison, didactics and legacy understanding.
+- Stage 9 uses Microsoft Agent Framework as the pro-code direction for all active LLM agents.
 - Agent/orchestration code must include short step-by-step English comments that explain the execution flow. Keep comments practical: explain why each major step exists, not obvious syntax.
 
 ---
@@ -197,7 +196,7 @@ MCP_DATA_MODE=mock
 7. [docs/06-dataverse-setup.md](docs/06-dataverse-setup.md) — Dataverse tables + data
 8. [docs/07-dataverse-integration.md](docs/07-dataverse-integration.md) — replace mocks
 9. [docs/08-secure-rag.md](docs/08-secure-rag.md) — Azure AI Search
-10. [docs/09-agent-framework.md](docs/09-agent-framework.md) — Microsoft Agent Framework + Copilot Studio, with one Semantic Kernel comparison agent
+10. [docs/09-agent-framework.md](docs/09-agent-framework.md) — Microsoft Agent Framework + Copilot Studio
 11. [docs/10-observability-polish.md](docs/10-observability-polish.md) — cost + demo
 
 **Post-MVP:** Microsoft 365 Agents SDK — custom-engine agent surface via Agents Playground, reusing the same Orchestrator API and MCP tool layer.

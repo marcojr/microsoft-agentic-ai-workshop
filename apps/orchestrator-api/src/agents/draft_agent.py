@@ -1,7 +1,7 @@
 import json
 
+from agent_framework import ChatAgent
 from pydantic import BaseModel
-from semantic_kernel.functions import KernelArguments
 
 from src.shared.agent_runtime import AzureOpenAIAgentRuntime
 
@@ -12,34 +12,24 @@ class DraftSummaryContract(BaseModel):
 
 
 class DraftAgent:
-    """Generates grounded customer-support summaries with Azure OpenAI."""
+    """Generates grounded customer-support summaries with Microsoft Agent Framework."""
 
     def __init__(self) -> None:
-        # Step 1: Create the shared Azure OpenAI runtime for Semantic Kernel.
+        # Step 1: Create the shared Azure OpenAI runtime for Microsoft Agent Framework.
         runtime = AzureOpenAIAgentRuntime()
+        self.client = runtime.build_agent_framework_client()
 
-        # Step 2: Build the Semantic Kernel comparison-agent runtime.
-        self.kernel = runtime.build_semantic_kernel()
-
-        # Step 3: Configure GPT-5-compatible structured output settings.
-        self.settings = runtime.build_semantic_kernel_settings(
+        # Step 2: Build the draft agent with a typed structured-output contract.
+        self.agent = ChatAgent(
+            chat_client=self.client,
+            name="DraftAgent",
+            instructions=self._build_instructions(),
             response_format=DraftSummaryContract,
-            structured_json_response=True,
         )
 
-    async def generate_summary(
-        self,
-        *,
-        customer: dict,
-        order: dict,
-        shipment: dict,
-        refunds: list[dict],
-        returns: list[dict],
-        knowledge: list[dict],
-        risk: str,
-    ) -> dict:
-        # Step 1: Define the model instructions for a safe, grounded structured response.
-        prompt = """
+    @staticmethod
+    def _build_instructions() -> str:
+        return """
 You are an enterprise order support agent.
 
 Return ONLY valid JSON that matches the provided response schema.
@@ -52,12 +42,20 @@ Rules:
 - Ground every field only in the provided data
 - Mention approval needs when present
 - Never promise compensation before approval is complete
+""".strip()
 
-Customer/order context:
-{{$context_json}}
-"""
-
-        # Step 2: Build the grounded context passed to the model.
+    async def generate_summary(
+        self,
+        *,
+        customer: dict,
+        order: dict,
+        shipment: dict,
+        refunds: list[dict],
+        returns: list[dict],
+        knowledge: list[dict],
+        risk: str,
+    ) -> dict:
+        # Step 1: Build the grounded context passed to the model.
         # The model should only reason over this prepared business data.
         context = {
             "customer": {
@@ -77,36 +75,28 @@ Customer/order context:
             "risk": risk,
         }
 
-        # Step 3: Invoke Semantic Kernel with the prompt, context and Azure OpenAI settings.
-        result = await self.kernel.invoke_prompt(
-            prompt,
-            arguments=KernelArguments(
-                context_json=json.dumps(context, indent=2),
-                settings=self.settings,
-            ),
+        # Step 2: Ask Microsoft Agent Framework to generate the structured summary.
+        response = await self.agent.run(
+            "Customer/order context:\n" + json.dumps(context, indent=2)
         )
 
-        # Step 4: Fail fast if Semantic Kernel returned nothing.
-        if result is None:
-            raise ValueError("Semantic Kernel returned no result.")
-
-        # Step 5: Read the raw structured JSON returned by the model.
-        content = str(result).strip()
+        # Step 3: Read and validate the raw structured JSON returned by the model.
+        content = response.text.strip()
         if not content:
-            raise ValueError("Semantic Kernel returned an empty summary.")
+            raise ValueError("Draft agent returned an empty summary.")
 
-        # Step 6: Validate the response against the didactic output contract.
         contract = self._parse_contract(content)
 
-        # Step 7: Extract token usage and model metadata for AgentOps telemetry.
-        inner = result.get_inner_content()
-        usage = getattr(inner, "usage", None)
+        # Step 4: Extract metadata when the Agent Framework response exposes it.
+        usage = getattr(response, "usage", None)
         return {
             "summary": contract.summary,
             "approvalRequired": contract.approvalRequired,
-            "inputTokens": getattr(usage, "prompt_tokens", 0),
-            "outputTokens": getattr(usage, "completion_tokens", 0),
-            "model": getattr(inner, "model", "gpt-5-mini"),
+            "inputTokens": getattr(usage, "prompt_tokens", 0)
+            or getattr(usage, "input_tokens", 0),
+            "outputTokens": getattr(usage, "completion_tokens", 0)
+            or getattr(usage, "output_tokens", 0),
+            "model": getattr(response, "model", "gpt-5-mini"),
         }
 
     @staticmethod
